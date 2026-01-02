@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $siteUrl = "https://ebroshop.onrender.com"; // Your Render URL
             
             // Your Cloudinary Logo
-            $logoUrl = "https://res.cloudinary.com/die8hxris/image/upload/v1765983301/wwa0hvys9hynad7fju9u.jpg";
+            $logoUrl = "https://res.cloudinary.com/die8hxris/image/upload/v1767382208/n8ixozf4lj5wfhtz2val.jpg";
 
             $data = array(
                 "sender" => array("name" => "EbRoShop", "email" => $senderEmail),
