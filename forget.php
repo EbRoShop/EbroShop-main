@@ -1,14 +1,17 @@
 <?php
+// Use the built-in dirname() function instead of DIR or DIR
+$base_path = dirname(FILE);
+
 // PHPMailer requirements
-require DIR . '/PHPMailer/Exception.php';
-require DIR . '/PHPMailer/PHPMailer.php';
-require DIR . '/PHPMailer/SMTP.php';
+require $base_path . '/PHPMailer/Exception.php';
+require $base_path . '/PHPMailer/PHPMailer.php';
+require $base_path . '/PHPMailer/SMTP.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// 1. Database Connection (Using your new db.php file)
-include 'db.php'; 
+// 1. Database Connection
+include 'db.php';
 
 // --- PART A: Sending the Link ---
 if (isset($_POST['request_reset'])) {
