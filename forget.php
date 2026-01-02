@@ -22,22 +22,27 @@ if (isset($_POST['request_reset'])) {
     $stmt->execute();
 
     if ($stmt->affected_rows > 0) {
-        $mail = new PHPMailer(true);
+     $mail = new PHPMailer(true);
         try {
-            // --- UPDATED SMTP SETTINGS TO BYPASS RENDER PORT BLOCK ---
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
             $mail->Username   = 'ebroshoponline@gmail.com'; 
-            $mail->Password   = 'mfaknagaapurcpjm'; // Your 16-character App Password
+            $mail->Password   = 'mfaknagaapurcpjm'; 
             
-            // Port 465 is the secure port usually allowed by cloud hosts
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; 
-            $mail->Port       = 465; 
-            
-            $mail->Timeout    = 30; // Extra time for the connection to establish
+            // Try this specific combination for Render
+            $mail->SMTPSecure = 'tls'; 
+            $mail->Port       = 587; 
 
-            // Email Content
+            // IMPORTANT: This tells the server to ignore some security checks that block connections
+            $mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
+
             $mail->setFrom('ebroshoponline@gmail.com', 'EbRoShop');
             $mail->addAddress($email);
             $mail->isHTML(true);
@@ -47,14 +52,12 @@ if (isset($_POST['request_reset'])) {
             $host = $_SERVER['HTTP_HOST'];
             $resetLink = "$protocol://$host/forget.php?token=$token";
 
-            $mail->Body    = "<h3>Reset Your Password</h3>
-                              <p>Click the link below to securely reset your password:</p>
-                              <a href='$resetLink'>$resetLink</a>";
+            $mail->Body    = "<h3>Reset Your Password</h3><a href='$resetLink'>$resetLink</a>";
 
             $mail->send();
-            echo "<script>alert('Check your email inbox!'); window.location.href='login.html';</script>";
+            echo "<script>alert('Check your email!'); window.location.href='login.html';</script>";
         } catch (Exception $e) { 
-            echo "<script>alert('Mailer Error: " . addslashes($mail->ErrorInfo) . "'); window.history.back();</script>"; 
+            echo "<script>alert('Still blocked! Error: " . addslashes($mail->ErrorInfo) . "'); window.history.back();</script>"; 
         }
     } else { 
         echo "<script>alert('Email not found in our system.'); window.history.back();</script>"; 
