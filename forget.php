@@ -64,32 +64,79 @@ if (isset($_POST['request_reset'])) {
 // ==========================================
 // PART B: NEW PASSWORD FORM
 // ==========================================
+// ==========================================
+// PART B: THE NEW PASSWORD FORM (MOBILE OPTIMIZED)
+// ==========================================
 if (isset($_GET['token'])): 
     $token = $_GET['token'];
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Set New Password</title>
     <style>
-        body { font-family: Arial; text-align: center; padding: 50px; background: #f4f4f4; }
-        .box { max-width: 350px; margin: auto; background: white; padding: 30px; border-radius: 8px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; box-sizing: border-box; }
-        button { background: #0076ad; color: white; border: none; width: 100%; padding: 10px; cursor: pointer; border-radius: 5px; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            background: #f4f4f4; 
+            margin: 0;
+        }
+        .box { 
+            max-width: 400px; 
+            margin: 40px auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        }
+        h2 { 
+            color: #333; 
+            font-size: 24px; /* Larger Header */
+            margin-bottom: 20px;
+        }
+        input { 
+            width: 100%; 
+            padding: 15px; /* Bigger touch area */
+            margin: 15px 0; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            font-size: 18px; /* Larger Text for Mobile */
+            box-sizing: border-box; 
+        }
+        button { 
+            background: #0076ad; 
+            color: white; 
+            border: none; 
+            width: 100%; 
+            padding: 16px; 
+            cursor: pointer; 
+            border-radius: 50px; 
+            font-size: 18px; 
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:active {
+            background: #005a84;
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
     <div class="box">
         <h2>New Password</h2>
+        <p style="color: #666; font-size: 14px;">Enter a strong password for your account.</p>
         <form method="POST" action="forget.php">
             <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
-            <input type="password" name="new_pass" placeholder="New Password" required minlength="6">
+            <input type="password" name="new_pass" placeholder="Enter New Password" required minlength="6">
             <button type="submit" name="update_now">Update Password</button>
         </form>
     </div>
 </body>
 </html>
 <?php endif; ?>
+
 
 <?php
 // ==========================================
