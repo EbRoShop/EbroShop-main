@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "to" => array(array("email" => $email, "name" => $fname)),
                 "subject" => "Customer account confirmation",
                 "htmlContent" => "
-                <div style='background-color: #f8f9fb; padding: 50px 20px; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;'>
+                <div style='background-color: #eaecf1ff; padding: 100px 40px; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;'>
                     <div style='max-width: 500px; margin: auto; background-color: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #e1e4e8;'>
                         
                         <div style='text-align: left; margin-bottom: 35px;'>
