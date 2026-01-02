@@ -24,18 +24,18 @@ if (isset($_POST['request_reset'])) {
     if ($stmt->affected_rows > 0) {
         $mail = new PHPMailer(true);
         try {
-            // --- UPDATED SMTP SETTINGS FOR RENDER ---
+            // --- UPDATED SMTP SETTINGS TO BYPASS RENDER PORT BLOCK ---
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
             $mail->Username   = 'ebroshoponline@gmail.com'; 
-            $mail->Password   = 'mfaknagaapurcpjm'; // Your App Password
+            $mail->Password   = 'mfaknagaapurcpjm'; // Your 16-character App Password
             
-            // Switching to SSL on Port 465 to bypass Render's port blocks
+            // Port 465 is the secure port usually allowed by cloud hosts
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; 
             $mail->Port       = 465; 
             
-            $mail->Timeout    = 30; // Increased timeout for slow connections
+            $mail->Timeout    = 30; // Extra time for the connection to establish
 
             // Email Content
             $mail->setFrom('ebroshoponline@gmail.com', 'EbRoShop');
@@ -54,7 +54,6 @@ if (isset($_POST['request_reset'])) {
             $mail->send();
             echo "<script>alert('Check your email inbox!'); window.location.href='login.html';</script>";
         } catch (Exception $e) { 
-            // This will now show more detail if it fails again
             echo "<script>alert('Mailer Error: " . addslashes($mail->ErrorInfo) . "'); window.history.back();</script>"; 
         }
     } else { 
