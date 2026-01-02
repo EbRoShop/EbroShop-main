@@ -1,8 +1,29 @@
 <?php
-// 1. FIXED FILE PATHS (Using __DIR__ with double underscores)
-require __DIR__ . '/PHPMailer/Exception.php';
-require __DIR__ . '/PHPMailer/PHPMailer.php';
-require __DIR__ . '/PHPMailer/SMTP.php';
+/**
+ * STEP 1: SMART FILE LOADING
+ * This part looks for PHPMailer files in all possible locations
+ */
+$paths = [
+    __DIR__ . '/PHPMailer/',
+    __DIR__ . '/phpmailer/',
+    __DIR__ . '/PHPMailer/src/',
+    __DIR__ . '/phpmailer/src/'
+];
+
+$found = false;
+foreach ($paths as $path) {
+    if (file_exists($path . 'PHPMailer.php')) {
+        require $path . 'Exception.php';
+        require $path . 'PHPMailer.php';
+        require $path . 'SMTP.php';
+        $found = true;
+        break;
+    }
+}
+
+if (!$found) {
+    die("Error: Could not find PHPMailer folder. Please ensure the folder is uploaded to GitHub and named 'PHPMailer'.");
+}
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -38,7 +59,7 @@ if (isset($_POST['request_reset'])) {
             $mail->isHTML(true);
             $mail->Subject = 'Reset Your Password';
             
-            // DYNAMIC LINK DETECTION
+            // DYNAMIC LINK DETECTION (Localhost or Render)
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
             $host = $_SERVER['HTTP_HOST'];
             $resetLink = "$protocol://$host/forget.php?token=$token";
