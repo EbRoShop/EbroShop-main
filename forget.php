@@ -1,5 +1,5 @@
 <?php
-// 1. DIRECT FILE LOADING (No folder needed)
+// 1. Loading PHPMailer (Assuming files are in the same folder as forget.php)
 require __DIR__ . '/Exception.php';
 require __DIR__ . '/PHPMailer.php';
 require __DIR__ . '/SMTP.php';
@@ -10,12 +10,14 @@ use PHPMailer\PHPMailer\Exception;
 // 2. Database Connection
 include 'db.php'; 
 
-// --- PART A: Sending the Link ---
+// ==========================================
+// PART A: SENDING THE RESET LINK
+// ==========================================
 if (isset($_POST['request_reset'])) {
     $email = $_POST['email'];
-    $token = bin2hex(random_bytes(32));
+    $token = bin2hex(random_bytes(32)); // Generates a secure random code
     
-    // Save token to DB
+    // Save token to your users table
     $stmt = $conn->prepare("UPDATE users SET reset_token = ? WHERE email = ?");
     $stmt->bind_param("ss", $token, $email);
     $stmt->execute();
@@ -28,9 +30,10 @@ if (isset($_POST['request_reset'])) {
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
             $mail->Username   = 'ebroshoponline@gmail.com'; 
-            $mail->Password   = 'mfaknagaapurcpjm';   
+            $mail->Password   = 'mfaknagaapurcpjm'; // App Password
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
+            $mail->Timeout    = 20;
 
             // Email Content
             $mail->setFrom('ebroshoponline@gmail.com', 'EbRoShop');
@@ -38,7 +41,7 @@ if (isset($_POST['request_reset'])) {
             $mail->isHTML(true);
             $mail->Subject = 'Reset Your Password';
             
-            // DYNAMIC LINK DETECTION
+            // Build the link back to this file
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
             $host = $_SERVER['HTTP_HOST'];
             $resetLink = "$protocol://$host/forget.php?token=$token";
@@ -50,16 +53,19 @@ if (isset($_POST['request_reset'])) {
             $mail->send();
             echo "<script>alert('Check your email inbox!'); window.location.href='login.html';</script>";
         } catch (Exception $e) { 
-            echo "Mailer Error: {$mail->ErrorInfo}"; 
+            echo "<script>alert('Mailer Error: " . addslashes($mail->ErrorInfo) . "'); window.history.back();</script>"; 
         }
     } else { 
         echo "<script>alert('Email not found in our system.'); window.history.back();</script>"; 
     }
 }
 
-// --- PART B: Showing the New Password Form ---
+// ==========================================
+// PART B: SHOWING THE NEW PASSWORD FORM
+// ==========================================
 if (isset($_GET['token'])): 
     $token = $_GET['token'];
+    // Optional: Verify if token exists in DB here for extra security
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -79,6 +85,7 @@ if (isset($_GET['token'])):
 <body>
     <div class="box">
         <h2>New Password</h2>
+        <p style="font-size:13px; color:#666;">Enter your new password below.</p>
         <form method="POST" action="forget.php">
             <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
             <input type="password" name="new_pass" placeholder="Enter New Password" required minlength="6">
@@ -90,12 +97,14 @@ if (isset($_GET['token'])):
 <?php endif; ?>
 
 <?php
-// --- PART C: Updating the Database ---
+// ==========================================
+// PART C: UPDATING THE DATABASE
+// ==========================================
 if (isset($_POST['update_now'])) {
     $token = $_POST['token'];
     $hashed = password_hash($_POST['new_pass'], PASSWORD_DEFAULT);
     
-    // Update password and clear the token
+    // Update password where token matches, then wipe the token
     $stmt = $conn->prepare("UPDATE users SET password = ?, reset_token = NULL WHERE reset_token = ?");
     $stmt->bind_param("ss", $hashed, $token);
     $stmt->execute();
