@@ -74,6 +74,7 @@ if (isset($_GET['token'])):
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Set New Password</title>
     <style>
         body { 
@@ -121,18 +122,66 @@ if (isset($_GET['token'])):
             background: #005a84;
             transform: scale(0.98);
         }
-    </style>
+
+       /* Styling the password container to position the eye */ 
+       .password-container { 
+                    position: relative;
+                    width: 100%;
+        } 
+       .password-container input {
+                width: 100%; 
+                padding: 15px;
+                padding-right: 45px;
+                /* Leave space for the eye */ 
+                margin: 15px 0; 
+                border: 1px solid #ccc; 
+                border-radius: 8px; 
+                font-size: 18px; 
+                box-sizing: border-box; 
+        }
+       .toggle-password {
+                 position: absolute;
+                 right: 15px;
+                 top: 50%; 
+                 transform: translateY(-50%); 
+                 cursor: pointer; 
+                 color: #666; 
+                 font-size: 20px; 
+                 z-index: 2; 
+        } 
+</style>
 </head>
 <body>
     <div class="box">
-        <h2>New Password</h2>
-        <p style="color: #666; font-size: 14px;">Enter a strong password for your account.</p>
+        <h2>Enter New Password Here👇</h2>
+        <p style="color: #666; font-size: 14px;">Enter a strong password for your EbRoShop account.</p>
         <form method="POST" action="forget.php">
             <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
-            <input type="password" name="new_pass" placeholder="Enter New Password" required minlength="6">
-            <button type="submit" name="update_now">Update Password</button>
+            <div class="password-container"> 
+              <input type="password" name="new_pass" id="new_pass" placeholder="Enter New Password" required minlength="6"> 
+              <i class="fa-solid fa-eye toggle-password" id="eyeIcon" onclick="togglePassword()"></i>
+            </div> 
+         <button type="submit" name="update_now">Update Password</button>
         </form>
     </div>
+      <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById("new_pass");
+            const eyeIcon = document.getElementById("eyeIcon");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                // Change eye to eye-slash
+                eyeIcon.classList.remove("fa-eye");
+                eyeIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                // Change eye-slash back to eye
+                eyeIcon.classList.remove("fa-eye-slash");
+                eyeIcon.classList.add("fa-eye");
+            }
+        }
+    </script>
 </body>
 </html>
 <?php endif; ?>
