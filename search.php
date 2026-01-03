@@ -52,6 +52,9 @@ include 'db.php';
     const searchInput = document.getElementById('searchInput');
     const searchResults = document.getElementById('searchResults');
 
+    // Focus search box on open
+    setTimeout(() => searchInput.focus(), 400);
+
     searchInput.addEventListener('input', () => {
         const query = searchInput.value.trim();
 
@@ -60,6 +63,7 @@ include 'db.php';
             return;
         }
 
+        // Fetch products from database
         fetch(`fetch_search_results.php?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(products => {
@@ -69,12 +73,12 @@ include 'db.php';
                 }
 
                 searchResults.innerHTML = products.map(p => {
-                    // Match your database 'status' column
+                    // Check if sold out based on your database "status" column
                     const isSoldOut = (p.status.toLowerCase() === 'sold_out' || p.status.toLowerCase() === 'out of stock');
 
-                    return `
+                    return ` 
                         <div class="product-card" style="position: relative; ${isSoldOut ? 'opacity: 0.6;' : ''}">
-                            ${isSoldOut ? '<div style="position:absolute; top:10px; right:10px; background:red; color:white; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold; z-index:1;">SOLD OUT</div>' : ''}
+                            ${isSoldOut ? '<div style="position:absolute; top:10px; left:10px; background:red; color:white; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; z-index:2;">SOLD OUT</div>' : ''}
                             
                             <img src="${p.image_url}" alt="${p.name}">
                             <div class="product-name">${p.name}</div>
@@ -82,7 +86,7 @@ include 'db.php';
                             
                             <button class="quick-add-btn" 
                                     style="background: ${isSoldOut ? '#888' : '#008cff'}; cursor: ${isSoldOut ? 'not-allowed' : 'pointer'};"
-                                    onclick="handleAddToCart(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                                    onclick='handleQuickAdd(${JSON.stringify(p)})'>
                                 ${isSoldOut ? 'Sold Out' : 'Quick Add'}
                             </button>
                         </div>
@@ -91,40 +95,43 @@ include 'db.php';
             })
             .catch(err => {
                 console.error("Search Error:", err);
+                searchResults.innerHTML = '<div class="status-msg">Error loading products</div>';
             });
     });
 
-    function handleAddToCart(product) {
-        const isSoldOut = (product.status.toLowerCase() === 'sold_out' || product.status.toLowerCase() === 'out of stock');
+    // THE SYSTEM TO ADD TO CART AND REDIRECT
+    function handleQuickAdd(product) {
+        const status = product.status.toLowerCase();
         
-        if (isSoldOut) {
-            alert("Sorry! This product is currently sold out and cannot be added to your cart.");
+        // 1. If Sold Out, show alert and STOP
+        if (status === 'sold_out' || status === 'out of stock') {
+            alert("Sorry! This item is currently sold out.");
             return;
         }
 
-        // 1. Get current cart from localStorage
+        // 2. Get current cart from LocalStorage
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
         
-        // 2. Check if item exists
-        const index = cart.findIndex(item => item.id === product.id);
+        // 3. Check if product already exists in cart
+        const existingIndex = cart.findIndex(item => item.id === product.id);
         
-        if (index !== -1) {
-            cart[index].qty += 1;
+        if (existingIndex !== -1) {
+            cart[existingIndex].qty += 1;
         } else {
-            // Add new item with quantity 1
+            // Add new item (Mapping image_url to image for Cart.html)
             cart.push({
                 id: product.id,
                 name: product.name,
                 price: parseFloat(product.price),
-                image: product.image_url,
+                image: product.image_url, 
                 qty: 1
             });
         }
         
-        // 3. Save back to localStorage
+        // 4. Save updated cart
         localStorage.setItem('cart', JSON.stringify(cart));
         
-        // 4. Redirect to Cart page
+        // 5. Redirect to Cart page
         window.location.href = "Cart.html";
     }
 </script>
