@@ -171,19 +171,21 @@
                 <button class="btn-blue" onclick="location.href='register.html'">Create new Account</button>
             </div>
 
-          <div id="view-logged-in" class="flicker-prevent">
-             <ul class="account-menu">
-                 <li class="menu-row"><a href="account.php"><i class="fa-regular fa-user"></i> Account Details</a></li>
-                 <li class="menu-row"><a href="address.php"><i class="fa-solid fa-location-dot"></i> Addresses</a></li>
+       <div id="view-logged-in" class="flicker-prevent">
+          <ul class="account-menu">
+              <li class="menu-row"><a href="account.php"><i class="fa-regular fa-user"></i> Account Details</a></li>
+               <li class="menu-row"><a href="address.php"><i class="fa-solid fa-location-dot"></i> Addresses</a></li>
         
-                 <li class="menu-row" id="admin-link" style="display: none;">
-                 <a href="javascript:void(0)" onclick="checkAdminAccess()"><i class="fa-solid fa-user-shield"></i> Admin Panel</a>
-                 </li>
+               <li class="menu-row">
+               <a href="javascript:void(0)" onclick="handleAdminRedirect()">
+                <i class="fa-solid fa-user-shield"></i> Admin Panel
+                </a>
+                </li>
 
-                  <li class="menu-row"><a href="change_password.html"><i class="fa-solid fa-lock"></i> Change Your Password</a></li>
-                  <li class="menu-row"><a href="javascript:void(0)" onclick="confirmLogout()" style="color: #cc0000;"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
-             </ul>
-          </div>
+                <li class="menu-row"><a href="change_password.html"><i class="fa-solid fa-lock"></i> Change Your Password</a></li>
+                <li class="menu-row"><a href="javascript:void(0)" onclick="confirmLogout()" style="color: #cc0000;"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
+          </ul>
+       </div>
         </div>
     </div>
 
@@ -217,36 +219,29 @@
         });
 
         // 4. Fix: Fetch session and remove 'flicker-prevent' ONLY when data is ready
-      let userRole = ""; // Global variable to store role
+     // Global variable to store the user's role
+let currentUserRole = "";
 
 fetch('check_session.php')
     .then(response => response.json())
     .then(data => {
-        const loggedInView = document.getElementById('view-logged-in');
-        const loggedOutView = document.getElementById('view-logged-out');
-        const adminLink = document.getElementById('admin-link');
-
         if (data.loggedIn) {
-            userRole = data.role; // Store role from session
+            // Store the role and name from the session
+            currentUserRole = data.role; 
+            document.getElementById('view-logged-out').classList.add('hidden');
+            document.getElementById('view-logged-in').classList.remove('hidden');
             document.getElementById('display-title').innerText = "Hi, " + data.name;
-            
-            // Show Admin Panel link only if the role is 'admin'
-            if (userRole === 'admin') {
-                adminLink.style.display = 'block';
-            }
-            
-            loggedInView.classList.remove('flicker-prevent');
-        } else {
-            loggedOutView.classList.remove('flicker-prevent');
         }
     });
 
-// Function to handle the admin redirect and alert
-function checkAdminAccess() {
-    if (userRole === 'admin') {
+// Function to handle the click on "Admin Panel"
+function handleAdminRedirect() {
+    if (currentUserRole === 'admin') {
+        // Only actual admins are redirected
         window.location.href = 'admin_dashboard.php';
     } else {
-        alert("Access Denied: You do not have admin privileges.");
+        // Everyone else gets an alert
+        alert("Access Denied: This area is for administrators only.");
     }
 }
     </script>
