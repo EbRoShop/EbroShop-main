@@ -32,36 +32,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "to" => array(array("email" => $email, "name" => $fname)),
                 "subject" => "Customer account confirmation",
                 "htmlContent" => "
-                <div style='background-color: #c4c8d3ff; padding: 20px 5px; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;'>
-                    <div style='max-width: 500px; margin: auto; background-color: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #e1e4e8;'>
+            
+                    <div style='font-family:Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; border: 1px solid #eee; text_align:center;'>
                         
-                        <div style='text-align: left; margin-bottom: 35px;'>
+                        <div style='text-align: left;'>
                             <img src='$logoUrl' alt='EbRoShop Logo' style='width: 260px; height: auto; display: block;'>
                         </div>
 
-                        <h1 style='font-size: 28px; color: #136835; margin-bottom: 20px; font-weight: 500;'>
-                            Welcome to <span style='color: #136835;'>EbRoShop.com!</span>
-                        </h1>
+                        <h1 style=' color: #136835;'>Welcome to EbRoShop!</h1>
 
-                        <p style='font-size: 18px; color: #6e6e73; line-height: 1.5; margin-bottom: 30px;'>
-                            You've activated your customer account. Next time you shop with us, log in for faster checkout.
-                        </p>
+                        <p style='font-size: 16px; color: #555;'>
+                            Hello $fname, your customer account is now active.</p>
+                           <p style='color:#777;'>Next time you shop with us, log in for faster checkout.</p>
+                     
+                          <br>
+                         
+                          <a href='$siteUrl' style='background-color: #136835; color: white; padding: 15px 35px; text-decoration: none; font-size: 18px; border-radius: 50px; display: inline-block; font-weight: bold;'>Visit our store</a>
+                           <br>
+                           <br>
+                        <p style='font-size: 12px; color: #bbb;'>If you have questions, reply to this email or contact us at $senderEmail. You can also reach us by calling our helpline number at +251970130755</p>
 
-                        <div style='text-align: center; margin-bottom: 40px;'>
-                            <a href='$siteUrl' style='background-color: #136835; color: #ffffff; padding: 16px 0; text-decoration: none; font-size: 18px; border-radius: 6px; display: block; font-weight: 500;'>
-                                Visit our store
-                            </a>
-                        </div>
-
-                        <div style='border-top: 1px solid #eeeeee; padding-top: 25px;'>
-                            <p style='font-size: 14px; color: #8e8e93; line-height: 1.6; margin: 0;'>
-                                If you have any questions, reply to this email or contact us at 
-                                <a href='mailto:ebroshoponline@gmail.com' style='color: #136835; text-decoration: none;'>ebroshoponline@gmail.com</a>. 
-                                You can also reach us by calling our helpline number at +251970130755
-                            </p>
-                        </div>
-                    </div>
-                </div>"
+                    
+                    </div>"
             );
 
             // FIXED URL: api.brevo.com
@@ -81,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Success message
             echo "<script>
-                    alert('Registration Successful! Welcome email sent to $email');
+                    alert('Congratulations! You have successfully created account for EbRoShop. Welcome message sent to your email $email');
                     window.location.href = 'login.html';
                   </script>";
         } else {
