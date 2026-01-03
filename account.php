@@ -783,7 +783,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
 
 
    <br>
-   <div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; background: #fff; margin: 0; padding: 20px; color: #333; } ">
+   <div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; background: #fff; margin: 0; padding: 30px; color: #333; } ">
     <div  class="header-title">My Account</div>
 
     <div class="section-title">Order History</div>
