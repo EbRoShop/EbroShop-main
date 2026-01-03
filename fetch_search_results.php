@@ -2,34 +2,26 @@
 // fetch_search_results.php
 include 'db.php'; 
 
-// 1. Tell the browser we are sending data
+// Set header to JSON and clear any accidental output
 header('Content-Type: application/json');
-
-// 2. Clear any accidental text from other files
-ob_clean(); 
+if (ob_get_length()) ob_clean(); 
 
 $query = isset($_GET['q']) ? $conn->real_escape_string($_GET['q']) : '';
 
 if ($query !== '') {
-    // 3. IMPORTANT: Make sure your table is called 'products' 
-    // and columns are 'name', 'category', 'image', 'price', 'stock'
-    $sql = "SELECT * FROM products 
+    // We select image_url specifically to match your database
+    $sql = "SELECT id, name, price, image_url, status, category FROM products 
             WHERE name LIKE '%$query%' 
             OR category LIKE '%$query%' 
-            LIMIT 15";
+            LIMIT 20";
             
     $result = $conn->query($sql);
     
-    if (!$result) {
-        // This will help us find the error in the Browser Console
-        http_response_code(500);
-        echo json_encode(["error" => $conn->error]);
-        exit();
-    }
-
     $products = [];
-    while($row = $result->fetch_assoc()) {
-        $products = $row;
+    if ($result) {
+        while($row = $result->fetch_assoc()) {
+            $products[] = $row;
+        }
     }
     echo json_encode($products);
 } else {

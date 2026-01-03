@@ -54,12 +54,12 @@ include 'db.php';
 
     searchInput.addEventListener('input', () => {
         const query = searchInput.value.trim();
+
         if (query.length < 1) {
-            searchResults.innerHTML = '<div class="status-msg">Start typing to find products...</div>';
+            searchResults.innerHTML = '<div class="status-msg">Start typing to find product</div>';
             return;
         }
 
-        // FETCH DATA FROM THE CLEAN PHP WORKER
         fetch(`fetch_search_results.php?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(products => {
@@ -69,26 +69,30 @@ include 'db.php';
                 }
 
                 searchResults.innerHTML = products.map(p => {
-                    const isSoldOut = (p.stock <= 0 || p.status === 'sold_out');
+                    // Sold out if status is 'sold_out' or 'out of stock'
+                    const isSoldOut = (p.status === 'sold_out' || p.status === 'out of stock');
+
                     return `
-                        <div class="product-card" style="${isSoldOut ? 'opacity: 0.5;' : ''}">
-                            <img src="${p.image}" alt="${p.name}">
+                        <div class="product-card" style="${isSoldOut ? 'opacity: 0.6;' : ''}">
+                            <img src="${p.image_url}" alt="${p.name}">
                             <div class="product-name">${p.name}</div>
-                            <div class="product-price">${p.price} Birr</div>
-                            ${isSoldOut
-                            ? '<button class="quick-add-btn" style="background:#888;" disabled>Sold Out</button>' 
-                            : `<button class="quick-add-btn" onclick="addToCart(${p.id})">Quick Add</button>`
+                            <div class="product-price">${parseFloat(p.price).toFixed(2)} birr</div>
+                            
+                            ${isSoldOut 
+                                ? `<button class="quick-add-btn" style="background:#888; cursor:not-allowed;" disabled>Sold Out</button>`
+                                : `<button class="quick-add-btn" onclick="quickAdd(${p.id})">Quick Add</button>`
                             }
                         </div>
                     `;
                 }).join('');
             })
             .catch(err => {
-                searchResults.innerHTML = '<div class="status-msg">Error connecting to database</div>';
+                console.error("Search Error:", err);
+                searchResults.innerHTML = '<div class="status-msg">Error: Check db.php connection</div>';
             });
     });
 
-    function addToCart(id) {
+    function quickAdd(id) {
         window.location.href = "Cart.html?add=" + id;
     }
 </script>
