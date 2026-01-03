@@ -1,12 +1,12 @@
 <?php
-
+include 'db.php';
 session_start();
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.html");
     exit();
 }
 
-include 'db.php';
+
 
 // 1. DELETE LOGIC
 if (isset($_GET['delete_id'])) {
