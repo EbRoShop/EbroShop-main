@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Developer Section - EbRo-Shop</title>
+  <style>
+    :root{
+      --bg:#f6fffb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#0f766e;
+      --soft:#e6fbf8;
+      --shadow: 0 6px 20px rgba(15,118,110,0.08);
+      --radius:18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--soft),#ffffff 40%);color:#0f172a;}
+
+    .wrap{max-width:1000px;margin:36px auto;padding:28px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+
+    /* Card */
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(15,23,42,0.03);
+      opacity:0;
+      transform:translateY(60px);
+      transition:all 1.2s ease-out;
+    }
+    .card.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    /* Profile card */
+    .profile{display:flex;gap:18px;align-items:center}
+    .avatar{width:88px;height:88px;border-radius:999px;flex:0 0 88px;display:grid;place-items:center;background:linear-gradient(135deg,#ffffff,#f0fffb);border:6px solid rgba(15,118,110,0.06)}
+    .avatar img{width:76px;height:76px;border-radius:999px;object-fit:cover}
+    .meta h2{margin:0;font-size:24px;letter-spacing:-0.3px}
+    .meta p{margin:4px 0 0;color:var(--muted)}
+    .follow{margin-top:12px}
+    .btn{display:inline-block;padding:10px 18px;border-radius:12px;background:transparent;border:1px solid rgba(15,118,110,0.12);color:var(--accent);font-weight:600;text-decoration:none}
+
+    /* social icons */
+    .socials{display:flex;gap:12px;margin-top:14px}
+    .socials a{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:999px;background:#fff;border:1px solid rgba(15,23,42,0.04);text-decoration:none}
+    .socials svg{width:22px;height:22px}
+
+    /* Readme card */
+    .readme h3{margin:0 0 12px;font-size:18px}
+    .readme ul{padding-left:18px;margin:0;color:var(--muted);line-height:1.7}
+    .readme li{margin:8px 0}
+
+    /* Contact/Message card */
+    .contact h3{margin:0 0 12px;font-size:20px}
+    .field{margin-bottom:12px}
+    .field label{display:block;margin-bottom:8px;font-weight:700}
+    .input,.textarea{width:100%;padding:14px;border-radius:12px;border:1px solid rgba(15,23,42,0.06);background:#fbfeff}
+    .textarea{min-height:120px;resize:vertical}
+
+    .note{font-size:13px;color:var(--muted);margin-top:10px}
+
+     @media (max-width:420px){
+      .wrap{padding:18px}
+      .avatar{width:72px;height:72px;flex:0 0 72px}
+      .meta h2{font-size:20px}
+    }
+      
+       input[type="text"], input[type="tel"]{
+    border:0;padding:14px 12px;font-family:var(--mono);font-size:16px;outline:none;background:transparent;flex:1;
+  }
+
+.send-button:hover {
+    background-color: #1a3c74;
+}
+
+.contact-form-wrapper {
+    flex: 1;
+    min-width: 300px;
+    padding-left: 30px;
+}
+
+/*.contact-form input, it delete me*/
+.contact-form textarea {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+    color: #aaa;
+}
+
+.contact-form textarea {
+    resize: vertical;
+}
+
+.send-button {
+    background-color: #0b1f49; /* Deep blue from the original button */
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+.send-button:hover {
+    background-color: #1a3c74;
+}
+
+.form-status {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+    display: none; /* Hidden by default */
+}
+
+@media (max-width: 768px) {
+    .contact-container {
+        flex-direction: column;
+    }
+    .contact-info,
+    .contact-form-wrapper {
+        padding-right: 0;
+        padding-left: 0;
+    }
+  }
+
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1 style="margin:0 0 18px;font-size:28px; color: #0f766e;">Developer</h1>
+    <p style="margin:0 0 22px;">Welcome to Developer section🙌 I would love to hear some questions from you like if you want to build a <b>website</b>,
+<b>mobile apps</b> and <b>need help</b> from me, contact-me by message or by click social media icons.</p>
+
+    <section class="grid">
+      <!-- Profile card -->
+      <article class="card">
+        <div class="profile">
+          <figure class="avatar">
+            <img src="https://res.cloudinary.com/die8hxris/image/upload/v1767514535/afrtfm3hodvlycsklsqy.jpg" alt="Profile" />
+          </figure>
+          <div class="meta">
+            <h2 style="font-family: Georgia, 'Times New Roman', Times, serif; color: #0f766e;">Rebyi Hassen</h2>
+            <p>Realme-core</p>
+            <div class="follow"><a class="btn" href="https://www.tiktok.com/@realme_4012015?_r=1&_t=ZM-91CRwVwVlV5">Follow</a></div>
+            <div class="socials">
+              <a aria-label="Facebook" href="https://www.facebook.com/profile.php?id=61564251998899" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.07C22 6.48 17.52 2 11.93 2S2 6.48 2 12.07C2 17.06 5.66 21.13 10.44 21.93v-6.83H7.9v-2.99h2.54V9.41c0-2.5 1.49-3.88 3.77-3.88 1.09 0 2.23.2 2.23.2v2.45h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.99h-2.34v6.83C18.34 21.13 22 17.06 22 12.07z"/></svg>
+              </a>
+              <a aria-label="Telegram" href="https://t.me/Rebyi43" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.03 15.59l-.35 4.95c.5 0 .72-.22 1-.49l2.4-2.28 4.99 3.32c.91.5 1.56.24 1.79-.83L23.99 4.6c.33-1.45-.53-2.02-1.49-1.66L1.24 9.2c-1.43.54-1.4 1.31-.25 1.7l5.83 1.82 13.57-8.56c.64-.35 1.23-.16.75.23L9.03 15.59z"/></svg>
+              </a>
+              <a aria-label="WhatsApp" href="https://wa.me/251989498343" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.472-.148-.672.149-.198.297-.771.967-.945 1.165-.174.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.476-.883-.788-1.48-1.761-1.653-2.059-.174-.297-.019-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.297.297-.495.099-.198.05-.372-.025-.521-.075-.149-.672-1.62-.922-2.219-.243-.579-.49-.5-.672-.51l-.573-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.076 4.487.403.173.718.276 1.021.354.429.118.82.101 1.13.061.345-.044 1.05-.429 1.2-.843.149-.415.149-.771.105-.843-.044-.074-.16-.118-.357-.198zM12.004 2C6.479 2 2 6.478 2 12.002c0 2.115.607 4.086 1.66 5.792L2 22l4.365-1.108A9.955 9.955 0 0 0 12.004 22c5.523 0 10.004-4.478 10.004-9.998C22.008 6.478 17.527 2 12.004 2z"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <a href="#readme" style="text-decoration:none;color:var(--accent);font-weight:600">Overview</a>
+          <span style="color:var(--muted);margin-left:12px">• Repositories 3</span>
+        </div>
+      </article>
+
+      <!-- Readme card -->
+      <article id="readme" class="card readme">
+        <h3 style="color: #0f766e; font-family: 'Times New Roman', Times, serif;">README</h3>
+        <div style="border-radius:12px;padding:14px;background:linear-gradient(180deg,#fbfffe,#ffffff);border:1px solid rgba(15,118,110,0.03)">
+          <ul>
+            <li>👋 Hi, I'm <strong>@Rebyi</strong></li>
+            <li>👀 I'm interested in cyber security</li>
+            <li>🌱 I'm currently learning responsive web development</li>
+            <li>💞 I'm looking to collaborate on web development projects</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Contact card -->
+      <article class="card contact">
+         <h2 style="text-align: left;
+    color: #0f766e; /* Gold accent color */
+    font-weight: bold;
+    margin-top: 0px;
+    margin-bottom: 10px; font-family: 'Times New Roman', Times, serif;" class="get-in-touch-heading">Contact</h2>
+
+         <form id="contactForm" class="contact-form">
+               <div style="margin-bottom:18px" class="field">
+        <div style=" display:flex;align-items:center;background:#f6f6f6;border-radius:10px;border:1px solid #dedede;overflow:hidden;" class="input-wrap">
+          <div style="background-color: rgb(48, 121, 54); width:58px;height:48px;display:flex;align-items:center;justify-content:center;border-right:1px solid #e0e0e0; " class="input-icon" aria-hidden="true">
+            <!-- user icon -->
+            <svg style="  width:20px;height:20px;opacity:.9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="3"></circle>
+              <path d="M4 20c1.5-4 7-4 8-4s6.5 0 8 4"></path>
+            </svg>
+          </div>
+          <input type="text" id="name" placeholder="Your Name" required>
+        </div>
+      </div>
+      
+
+       <div style="margin-bottom:18px" class="field">
+        <div  style=" display:flex;align-items:center;background:#f6f6f6;border-radius:10px;border:1px solid #dedede;overflow:hidden;
+ "  class="input-wrap">
+          <div style="background-color:rgb(14, 91, 138);   width:58px;height:48px;display:flex;align-items:center;justify-content:center;border-right:1px solid #e0e0e0;" class="input-icon" aria-hidden="true">
+            <!-- phone icon -->
+            <svg style="width:20px;height:20px;opacity:.9"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.86 19.86 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12 1.21.38 2.4.78 3.53a2 2 0 0 1-.45 2.11L8.09 11.91a16 16 0 0 0 6 6l1.55-1.55a2 2 0 0 1 2.11-.45c1.13.4 2.32.66 3.53.78A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+          </div>
+          <input type="tel" id="phone" placeholder="Your Phone" required>
+        </div>
+      </div> 
+                
+                
+                <textarea id="comment" placeholder="Write Your Comment" rows="5" required></textarea>
+                
+                <button type="submit" class="send-button">
+                    SEND <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+
+        <p class="note">Location: Mekelle, Ethiopia</p>
+      </article>
+
+    </section>
+  </main>
+
+  <script>
+      // ====== REPLACE THESE ======
+       const token = "8458097036:AAG29CuWdhYBKspr3BS6N-yWeXkkBEVUzTo"; // Your BotFather token
+    const chat_id = "5335234629";  // Your Telegram chat ID
+    // ===========================
+
+    const form = document.getElementById("contactForm");
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault(); // Prevent page reload
+
+      // Get form values
+      const name = form.name.value;
+      const phone = form.phone.value;
+      const comment = form.comment.value;
+
+      // Build the message text
+    
+      const text = `📩 Developer Contact Form Ebroshop:\n👤 Name: ${name}\n📞 phone: ${phone}\n 💌 Message፡ ${comment}`;
+
+      // Send the message to Telegram
+      fetch(`https://api.telegram.org/bot8458097036:AAG29CuWdhYBKspr3BS6N-yWeXkkBEVUzTo/sendMessage?chat_id=5335234629&text=${encodeURIComponent(text)}`)
+        .then(response => {
+          if(response.ok){
+            alert("I am successfully received your comment. I will comunicate to you shortly🌿");
+            form.reset(); // Clear the form
+          } else {
+            alert("❌ Failed to send, please try again!");
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          alert("❌ Error sending Order!");
+        });
+    });
+
+
+    // Animate only main content cards, not header/footer
+    const cards = document.querySelectorAll('.card');
+    function revealOnScroll(){
+      cards.forEach(card=>{
+        const windowHeight = window.innerHeight;
+        const elementTop = card.getBoundingClientRect().top;
+        const edge = 120; // when near edge
+        if(elementTop < windowHeight - edge){
+          card.classList.add('show');
+        }else{
+          card.classList.remove('show');
+        }
+      });
+    }
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll();
+  </script>
+</body>
+</html>

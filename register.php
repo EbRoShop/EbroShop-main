@@ -51,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                           <a href='$siteUrl' style='background-color: #136835; color: white; padding: 15px 35px; text-decoration: none; font-size: 18px; border-radius: 50px; display: inline-block; font-weight: bold;text-align:center;'>Visit our store</a>
                            <br>
                            <br>
-                        <p style='font-size: 12px; color: #bbb;'>If you have questions, reply to this email or contact us at $senderEmail. You can also reach us by calling our helpline number at <b style='color: #0b91ff;'>+251970130755</b></p>
+                        <p style='font-size: 12px; color: #bbb;'>If you have any questions, reply to this email or contact us at $senderEmail. You can also reach us by calling our helpline number at <b style='color: #0b91ff;'>+251970130755</b></p>
 
                     
                     </div>"
