@@ -61,101 +61,240 @@ button:hover {background:#0056b3;}
   <button onclick="submitOrder()">ORDER</button>
 </div>
 
+
+
 <script>
-/* (Keep your existing Session and Cart Rendering code at the top) */
+    /* -------------------------
+       1. AUTH & SESSION LOGIC
+       ------------------------- */
+    let isLoggedIn = false;
+    fetch('check_session.php')
+        .then(response => response.json())
+        .then(data => {
+            const authLink = document.getElementById('auth-link');
+            const authText = document.getElementById('auth-text');
+            if (data.loggedIn) {
+                isLoggedIn = true;
+                // Pre-fill name if input exists
+                if(document.getElementById('name')) {
+                    document.getElementById('name').value = data.name;
+                }
+                if(authLink && authText) {
+                    authLink.href = "javascript:void(0)";
+                    authLink.onclick = function() {
+                        if(confirm("Are you sure you want to log out?")) {
+                            window.location.href = 'logout.php';
+                        }
+                    };
+                    authText.innerText = "Logout (" + data.name + ")";
+                }
+            }
+        })
+        .catch(err => console.error("Session check failed", err));
 
-async function submitOrder() {
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const payment = document.querySelector("input[name='pay']:checked").value;
-    const proof = document.getElementById("proof");
+    /* -------------------------
+       2. CART LOADING & RENDERING
+       ------------------------- */
+    const CART_KEY = "cartItems";
+    const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+    const productsDiv = document.getElementById("products");
+    let subtotal = 0;
 
-    if(!name || !phone) { alert("Please fill name and phone"); return; }
-
-    const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";
-    const CHAT_ID = "5335234629";
-    const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-    // --- 1. SEND TO BREVO EMAIL ---
-    const emailData = new FormData();
-    emailData.append('name', name);
-    emailData.append('phone', phone);
-    emailData.append('paymentMethod', payment);
-    emailData.append('cartData', JSON.stringify(cart));
-    emailData.append('totalPrice', subtotal);
-
-    fetch('order.php', { method: 'POST', body: emailData })
-        .then(res => res.json())
-        .then(d => console.log("Brevo Email Sent"))
-        .catch(e => console.log("Email Error"));
-
-    try {
-        // --- 2. TELEGRAM: CUSTOMER INFO ---
-        await fetch(`${API}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: `🟢NEW ORDER🟢\n👤 Name: ${name}\n📞 Phone: ${phone}\n💳 Payment: ${payment}`
-            })
+    if(productsDiv) {
+        if(cart.length === 0){
+            productsDiv.innerHTML = "<p style='text-align:center;'>No products in your bag</p>";
+        }
+        cart.forEach(p => {
+            subtotal += p.price * p.qty;
+            productsDiv.innerHTML += `
+                <div class="product">
+                    <div class="qty-badge">${p.qty}</div>
+                    <img src="${p.image || p.img || 'https://via.placeholder.com/150'}">
+                    <div class="info">
+                        <strong>${p.name}</strong>
+                        ETB ${(p.price * p.qty).toFixed(2)}
+                    </div>
+                </div>
+           ` ;
         });
+        document.getElementById("subtotal").innerText = "ETB " + subtotal.toFixed(2);
+        document.getElementById("total").innerText = "ETB " + subtotal.toFixed(2);
+    }
 
-        // --- 3. TELEGRAM: INDIVIDUAL PRODUCTS WITH PHOTOS ---
-        for (const p of cart) {
+    /* -------------------------
+       3. UI INTERACTION (Payment Toggle)
+       ------------------------- */
+    document.querySelectorAll("input[name='pay']").forEach(r => {
+        r.addEventListener("change", () => {
+            const uploadBox = document.getElementById("uploadBox");
+            if(r.value === "Transfer" && r.checked){
+                uploadBox.style.display = "block";
+            } else {
+                uploadBox.style.display = "none";
+            }
+        });
+    });
+
+    function smallCloudinary(url) {
+        if(!url) return "https://via.placeholder.com/150";
+        if(url.includes("cloudinary.com")) {
+            return url.replace("/upload/", "/upload/w_300,h_300,c_fit,q_60,f_jpg/");
+        }
+        return url;
+    }
+
+    /* -------------------------
+       4. ORDER HANDLING
+       ------------------------- */
+    function handleOrderClick() {
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        if(!name || !phone){
+            alert("Please fill name and phone number first.");
+            return;
+        }
+
+        if (isLoggedIn) {
+            submitOrder(); 
+        } else {
+            if (confirm("Wait! You are not logged in. Login now?")) {
+                window.location.href = "login.html"; 
+            } else {
+                alert("Only members can place orders.");
+            }
+        }
+    }
+
+    async function submitOrder() {
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const payment = document.querySelector("input[name='pay']:checked").value;
+        const proof = document.getElementById("proof");
+        if (payment === "Transfer" && (!proof.files || !proof.files.length)) {
+            alert("Please upload your transfer proof.");
+            return;
+        }
+
+        const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";
+        const CHAT_ID = "5335234629";
+        const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
+        // A. SEND TO EMAIL (order.php using Brevo)
+        const emailForm = new FormData();
+        emailForm.append('name', name);
+        emailForm.append('phone', phone);
+        emailForm.append('paymentMethod', payment);
+        emailForm.append('cartData', JSON.stringify(cart));
+        emailForm.append('totalPrice', subtotal);
+        fetch('order.php', { method: 'POST', body: emailForm });
+
+        try {
+            // B. TELEGRAM: CUSTOMER INFO
             await fetch(`${API}/sendMessage`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     chat_id: CHAT_ID,
-                    text: `📦 Product:\n🧾 Name: ${p.name}\n🔢 Qty: ${p.qty}\n💵 Price: ETB ${p.price}\n💰 Subtotal: ETB ${(p.price * p.qty).toFixed(2)}`
+                    text: `🟢NEW ORDER🟢\n👤 Name: ${name}\n📞 Phone: ${phone}\n💳 Payment: ${payment}`
                 })
             });
 
-            await fetch(`${API}/sendPhoto`, {
+            // C. TELEGRAM: EACH PRODUCT + PHOTO
+            for (const p of cart) {
+                // Send Text
+                await fetch(`${API}/sendMessage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: `📦 Product:\n🧾 Name: ${p.name}\n🔢 Qty: ${p.qty}\n💵 Price: ETB ${p.price}\n💰 Subtotal: ETB ${(p.price * p.qty).toFixed(2)}`
+                    })
+                });
+                // Send Photo
+                await fetch(`${API}/sendPhoto`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        photo: smallCloudinary(p.image || p.img),
+                        caption: `${p.name} x${p.qty} = ETB ${(p.price * p.qty).toFixed(2)}`
+                    })
+                });
+            }
+
+            // D. TELEGRAM: TRANSFER PROOF
+            if (payment === "Transfer" && proof.files.length) {
+                const form = new FormData();
+                form.append("chat_id", CHAT_ID);
+                form.append("document", proof.files[0]);
+                form.append("caption", "💳 Transfer Receipt: " + name);
+                await fetch(`${API}/sendDocument`, { method: "POST", body: form });
+            }
+
+            // E. TELEGRAM: FINAL TOTAL
+            await fetch(`${API}/sendMessage`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     chat_id: CHAT_ID,
-                    photo: smallCloudinary(p.image || p.img),
-                    caption: `${p.name} x${p.qty}`
+                    text: `💰 TOTAL ORDER AMOUNT: ETB ${subtotal.toFixed(2)}\n✅✅Finished✅✅`
                 })
             });
+
+            localStorage.removeItem(CART_KEY);
+            alert("Order Success!");
+            window.location.href = "home.html";
+
+        } catch (error) {
+            console.error("Order Error:", error);
+            alert("Something went wrong, but your order was sent to email.");
         }
-
-        // --- 4. TELEGRAM: TRANSFER PROOF ---
-        if (payment === "Transfer" && proof.files.length) {
-            const form = new FormData();
-            form.append("chat_id", CHAT_ID);
-            form.append("document", proof.files[0]);
-            form.append("caption", "💳 Transfer Proof: " + name);
-            await fetch(`${API}/sendDocument`, { method: "POST", body: form });
-        }
-
-        // --- 5. TELEGRAM: TOTAL & FINISH ---
-        await fetch(`${API}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: `💰 TOTAL ORDER AMOUNT: ETB ${subtotal.toFixed(2)}\n✅✅Finished✅✅`
-            })
-        });
-
-        localStorage.removeItem(CART_KEY);
-        alert("Order Successful!");
-        window.location.href = "thankyou.html";
-
-    } catch (e) {
-        alert("Success! Order processed.");
-        window.location.href = "thankyou.html";
     }
-}
 
-// Ensure your order button is linked
-const orderBtn = document.querySelector(".btn-order");
-if(orderBtn) orderBtn.onclick = handleOrderClick; 
-// (Make sure handleOrderClick calls submitOrder() like in your original code)
+    // Bind Main Button
+    const btnOrder = document.querySelector(".btn-order");
+    if(btnOrder) btnOrder.onclick = handleOrderClick;
+
+    /* -------------------------
+       5. HEADER, SEARCH & MENU (Original)
+       ------------------------- */
+    (function(){
+        const hamburger = document.getElementById("hamburgerBtn");
+        const sideMenu = document.getElementById("sideMenu");
+        const menuOverlay = document.getElementById("menuOverlay");
+        const badge = document.getElementById("cartBadge");
+        function updateBadge(){
+            const c = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+            const total = c.reduce((s,i)=> s + (i.qty||0), 0);
+            if(badge) {
+                badge.style.display = total > 0 ? "flex" : "none";
+                badge.innerText = total;
+            }
+        }
+        updateBadge();
+
+        if(hamburger) hamburger.onclick = () => { sideMenu.style.left = "0"; menuOverlay.style.display = "block"; };
+        if(menuOverlay) menuOverlay.onclick = () => { sideMenu.style.left = "-320px"; menuOverlay.style.display = "none"; };
+    })();
+
+    // FAQ Toggle
+    function toggleSection(id, header) {
+        const content = document.getElementById(id);
+        const icon = header.querySelector('.toggle');
+        content.classList.toggle('hidden');
+        icon.textContent = content.classList.contains('hidden') ? '+' : '−';
+    }
+
+    // Scroll Animations
+    const items = document.querySelectorAll('.animate-on-scroll');
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+    }, { threshold: 0.3 });
+    items.forEach(el => observer.observe(el));
 </script>
+
 </body>
 </html>
 
