@@ -105,7 +105,7 @@ include 'db.php';
     // GLOBAL FUNCTION TO HANDLE ADDING
     window.handleQuickAdd = function(product) {
         if (product.status && (product.status.toLowerCase() === 'sold_out' || product.status.toLowerCase() === 'out of stock')) {
-            alert("Sorry! This item is sold out.");
+            alert("Sorry! This item is sold out. You can't add it right now. We'll add it soon.");
             return;
         }
 
