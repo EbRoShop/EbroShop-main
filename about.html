@@ -8,19 +8,19 @@
 
   <style>
     /* RESET */
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;background:#fff}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {background: #fff;}
 
 /* HEADER */
-.header{
-  background:#136835;
-  height:62px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 16px;
-  color:#fff;
-}
+ .header {
+    background: #136835;
+    height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    color: #fff;
+  }
 .left,.right{display:flex;align-items:center;gap:18px}
 .icon-btn{cursor:pointer;display:flex;align-items:center}
 .icon-btn svg{
@@ -403,6 +403,74 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
     position: relative;
   }
 
+
+
+
+  /* 1. Use a specific class to avoid conflicts with other lists or links */
+.ebro-bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    /* Height calculation including modern phone safe areas */
+    height: calc(72px + env(safe-area-inset-bottom)) !important;
+    background: #ffffff !important;
+    border-top: 1px solid #e0e0e0 !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    z-index: 99999 !important; /* Extremely high to stay on top */
+    padding-bottom: env(safe-area-inset-bottom) !important;
+    box-shadow: 0 -3px 12px rgba(0,0,0,0.08) !important;
+}
+
+/* 2. Target only the items inside THIS nav */
+.ebro-bottom-nav .ebro-nav-item {
+    flex: 1 !important; /* Forces 5 equal parts */
+    text-align: center !important;
+    text-decoration: none !important;
+    color: #666 !important;
+    font-size: 11px !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.ebro-bottom-nav .ebro-nav-item svg {
+    width: 24px !important;
+    height: 24px !important;
+    margin-bottom: 4px !important;
+    stroke: #666 !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* 3. The Cart Badge specific to this nav */
+.ebro-bottom-nav .ebro-badge {
+    position: absolute !important;
+    top: 8px !important;
+    right: 22% !important;
+    background: #ff0000 !important; /* Red for attention */
+    color: #fff !important;
+    font-size: 10px !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    border-radius: 50% !important;
+    display: none; /* Controlled by JS */
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: bold !important;
+}
+
+/* 4. Android Comfort Fix: Pushes the whole page content up */
+body {
+    padding-bottom: calc(85px + env(safe-area-inset-bottom)) !important;
+}
   </style>
 </head>
 <body>
@@ -432,7 +500,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
       <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </div>
 
-   <a href="search.html" aria-label="Search" class="icon-btn">
+   <a href="search.php" aria-label="Search" class="icon-btn">
           <svg viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="6"/>
           <path d="M21 21l-4-4"/>
@@ -1073,6 +1141,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
 
 </div>
 </div>
+</div>
 
 
 
@@ -1110,7 +1179,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
     Home
   </a>
 
-  <a href="search.html" style="  flex: 1;
+  <a href="search.php" style="  flex: 1;
     text-align: center;
     text-decoration: none;
     color: #666;
@@ -1197,6 +1266,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
 
 </nav>
 </div>
+
 
 
   <script>
@@ -1426,6 +1496,33 @@ function toggleSection(id, header) {
         icon.textContent = '+';
     }
 }
+
+
+
+(function() {
+    function updateBottomBadge() {
+        // This matches the key you use in your search script: EBRO_CART
+        const cartData = JSON.parse(localStorage.getItem('EBRO_CART')) || [];
+        const count = cartData.reduce((total, item) => total + item.qty, 0);
+        const badge = document.getElementById('bottomNavCartBadge');
+        
+        if (badge) {
+            if (count > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    // Update on load and when storage changes
+    window.addEventListener('load', updateBottomBadge);
+    window.addEventListener('storage', updateBottomBadge);
+    
+    // Check every 2 seconds just in case of local changes
+    setInterval(updateBottomBadge, 2000);
+})();
   </script>
 </body>
 </html>
