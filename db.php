@@ -30,7 +30,7 @@ $host = getenv('DB_HOST');
 $user = getenv('DB_USER');
 $pass = getenv('DB_PASS');
 $port = getenv('DB_PORT');
-$dbname = "ebroshop-db";
+$dbname = "defaultdb";
 
 $conn = mysqli_init();
 mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
