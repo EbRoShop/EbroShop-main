@@ -1177,7 +1177,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
 
 
         
-const CART_KEY = "EBRO_CART";
+const CART_KEY = "cartItems";
 const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 const productsDiv = document.getElementById("products");
 let subtotal = 0;
@@ -1266,119 +1266,100 @@ function handleOrderClick() {
     }
 }
 
-async function submitOrder() {
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const payment = document.querySelector("input[name='pay']:checked").value;
-  const proof = document.getElementById("proof");
 
-  // 1. Basic Validation
-  if (!name || !phone) {
-    alert("Please fill name and phone number");
-    return;
-  }
 
-  if (payment === "Transfer" && !proof.files.length) {
-    alert("Please upload your transfer proof");
-    return;
-  }
 
-  // Show processing message
-  alert("Processing your order, please wait...");
+/* ------------------------- Handle Order Logic ------------------------- */
+  async function submitOrder() {
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const payment = document.querySelector("input[name='pay']:checked").value;
 
-  // 2. SAVE TO DATABASE (save_order.php)
-  try {
-    const orderData = {
-      name: name,
-      phone: phone,
-      payment: payment,
-      total: subtotal, // Make sure 'subtotal' variable is accessible here
-      cart: cart      // Your cart array from localStorage
-    };
-
-    const dbResponse = await fetch('save_order.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData)
-    });
-
-    const dbResult = await dbResponse.json();
-
-    if (!dbResult.success) {
-      alert("Error saving to database: " + dbResult.message);
-      return; // Stop if database save fails
+    if (!name || !phone) {
+      alert("Please enter Name and Phone");
+      return;
     }
 
+    // 1. SEND TO EMAIL (order.php)
+    const emailData = new FormData();
+    emailData.append('name', name);
+    emailData.append('phone', phone);
+    emailData.append('paymentMethod', payment);
+    emailData.append('cartData', JSON.stringify(cart));
+    emailData.append('totalPrice', subtotal);
 
-
-
-
-
-
-
-
-
-
-   function sendOrder() {
-    const name = document.getElementById('name').value;
-    const phone = document.getElementById('phone').value;
-    const address = document.getElementById('address').value;
-    const paymentElement = document.querySelector('input[name="payment"]:checked');
-    
-    if(!name || !phone || !address || !paymentElement) {
-        alert("Please fill all fields");
-        return;
-    }
-
-    const paymentMethod = paymentElement.value;
-    const cart = JSON.parse(localStorage.getItem('EBRO_CART')) || [];
-    const totalPrice = document.getElementById('totalPrice').innerText.replace('$', '');
-
-    // 1. TELEGRAM MESSAGE (Keeping your current style)
-    let message = `📝 *New Order from EbRo-Shop*\n\n`;
-    message += `👤 *Name:* ${name}\n`;
-    message += `📞 *Phone:* ${phone}\n`;
-    message += `📍 *Address:* ${address}\n`;
-    message += `💳 *Payment:* ${paymentMethod}\n\n`;
-    message += `🛒 *Items:* \n`;
-    
-    cart.forEach(item => {
-        message += `- ${item.name} (x${item.qty}) - $${(item.price * item.qty).toFixed(2)}\n`;
-    });
-    
-    message += `\n💰 *Total Price: $${totalPrice}*`;
-
-    const botToken = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk"; // Use your actual token
-    const chatId = "5335234629";     // Use your actual chat ID
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    fetch('order.php', { method: 'POST', body: emailData })
+      .then(res => res.json())
+      .then(data => console.log("Email Sent"))
+      .catch(err => console.log("Email Error"));
 
     // 2. SEND TO TELEGRAM
-    fetch(telegramUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'Markdown' })
+    const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";
+    const CHAT_ID = "5335234629";
+    const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+    let tgMsg = `🛒 *NEW ORDER - EBRO SHOP*\n\n`;
+    tgMsg += `👤 *Name:* ${name}\n`;
+    tgMsg += `📞 *Phone:* ${phone}\n`;
+    tgMsg += `💳 *Pay:* ${payment}\n\n`;
+    tgMsg += `📦 *Products:* \n`;
+    cart.forEach(p => {
+      tgMsg += `- ${p.name} (x${p.qty})\n`;
+    });
+    tgMsg += `\n💰 *Total: ETB ${subtotal.toFixed(2)}*`;
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: tgMsg, parse_mode: "Markdown" })
+      });
+
+      localStorage.removeItem(CART_KEY);
+      alert("Success! Your order has been sent.");
+      window.location.href = "success.html";
+    } catch (e) {
+      alert("Error sending Telegram message.");
+    }
+  }
+
+  // Bind the function to your button
+  document.querySelector(".btn-order").onclick = submitOrder;
+
+  /* ------------------------- Toggle Payment proof ------------------------- */
+
+
+
+
+    /* SEND TRANSFER PROOF */
+    if (payment === "Transfer" && proof.files.length) {
+      const form = new FormData();
+      form.append("chat_id", CHAT_ID);
+      form.append("document", proof.files[0]);
+      form.append("caption", "💳 Transfer Proof");
+      await fetch(`${API}/sendDocument`, { method: "POST", body: form });
+    }
+
+    /* SEND TOTAL + FINISHED */
+    await fetch(`${API}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: `💰 TOTAL ORDER AMOUNT: ETB ${subtotal.toFixed(2)}\n✅✅Finished✅✅`
+      })
     });
 
-    // 3. SEND TO EMAIL (order.php)
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('phone', phone);
-    formData.append('address', address);
-    formData.append('paymentMethod', paymentMethod);
-    formData.append('cartData', JSON.stringify(cart));
-    formData.append('totalPrice', totalPrice);
+    localStorage.removeItem(CART_KEY);
+    window.location.href = "thankyou.html";
 
-    fetch('order.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(() => {
-        // Clear cart and finish
-        localStorage.removeItem('EBRO_CART');
-        window.location.href = "success.html";
-    })
-    .catch(err => console.log("Email error: ", err));
-}
+  
+   } catch (error) {
+    console.error("Order Error:", error);
+    alert("Something went wrong. Please try again.");
+  }
+
+
 
 
 
