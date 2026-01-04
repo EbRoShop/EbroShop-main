@@ -49,13 +49,17 @@ include 'db.php';
 </div>
 
 <script>
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
+(function(){
+    const searchInput = document.getElementById("searchInput");
+    const searchResults = document.getElementById("searchResults");
+    
+    // MATCHING YOUR STORAGE KEY FROM search.html
+    const CART_KEY = "cartItems";
 
-    // Focus on search input when page opens
+    // Focus search box automatically
     setTimeout(() => searchInput.focus(), 400);
 
-    searchInput.addEventListener('input', () => {
+    searchInput.addEventListener("input", () => {
         const query = searchInput.value.trim();
 
         if (query.length < 1) {
@@ -63,6 +67,7 @@ include 'db.php';
             return;
         }
 
+        // Fetch from your PHP worker
         fetch(`fetch_search_results.php?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(products => {
@@ -72,10 +77,9 @@ include 'db.php';
                 }
 
                 searchResults.innerHTML = products.map(p => {
-                    // Check status for Sold Out system
-                    const isSoldOut = (p.status.toLowerCase() === 'sold_out' || p.status.toLowerCase() === 'out of stock');
+                    const isSoldOut = (p.status && (p.status.toLowerCase() === 'sold_out' || p.status.toLowerCase() === 'out of stock'));
 
-                    return ` 
+                    return `
                         <div class="product-card" style="position: relative; ${isSoldOut ? 'opacity: 0.6;' : ''}">
                             ${isSoldOut ? '<div style="position:absolute; top:10px; left:10px; background:red; color:white; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; z-index:2;">SOLD OUT</div>' : ''}
                             
@@ -85,7 +89,7 @@ include 'db.php';
                             
                             <button class="quick-add-btn" 
                                     style="background: ${isSoldOut ? '#888' : '#008cff'}; cursor: ${isSoldOut ? 'not-allowed' : 'pointer'};"
-                                    onclick='addToCartFromSearch(${JSON.stringify(p)})'>
+                                    onclick='handleQuickAdd(${JSON.stringify(p)})'>
                                 ${isSoldOut ? 'Sold Out' : 'Quick Add'}
                             </button>
                         </div>
@@ -93,47 +97,42 @@ include 'db.php';
                 }).join('');
             })
             .catch(err => {
-                console.error("Search Error:", err);
+                // If you see this, your db.php host is still wrong
+                searchResults.innerHTML = '<div class="status-msg">Database Connection Error. Check db.php</div>';
             });
     });
 
-    // THIS FUNCTION MATCHES YOUR FILENAME "search.html" LOGIC EXACTLY
-    function addToCartFromSearch(product) {
-        // 1. Sold Out Check
-        const status = product.status.toLowerCase();
-        if (status === 'sold_out' || status === 'out of stock') {
-            alert("This product is sold out!");
+    // GLOBAL FUNCTION TO HANDLE ADDING
+    window.handleQuickAdd = function(product) {
+        if (product.status && (product.status.toLowerCase() === 'sold_out' || product.status.toLowerCase() === 'out of stock')) {
+            alert("Sorry! This item is sold out.");
             return;
         }
 
-        // 2. Use the EXACT storage key from your search.html
-        const CART_KEY = "EBRO_CART"; 
-        
-        // 3. Load existing cart
+        // 1. Load existing cart using your specific key "cartItems"
         let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
         
-        // 4. Check if item exists (using id from database)
-        const existingItem = cart.find(item => item.id === product.id);
+        // 2. Check if already in cart
+        const existingIndex = cart.findIndex(item => item.id === product.id);
         
-        if (existingItem) {
-            existingItem.qty += 1;
+        if (existingIndex !== -1) {
+            cart[existingIndex].qty += 1;
         } else {
-            // 5. Add product using the database column names
+            // 3. Add new item (Map image_url to image to match your cart logic)
             cart.push({
                 id: product.id,
                 name: product.name,
                 price: parseFloat(product.price),
-                image: product.image_url, // Maps image_url to image
+                image: product.image_url, 
                 qty: 1
             });
         }
         
-        // 6. Save back to EBRO_CART
+        // 4. Save and Redirect
         localStorage.setItem(CART_KEY, JSON.stringify(cart));
-        
-        // 7. Redirect to Cart
         window.location.href = "Cart.html";
-    }
+    };
+})();
 </script>
 </body>
 </html>
