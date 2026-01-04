@@ -1154,75 +1154,69 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
 </div>
 
 
-<script>
-    /* ------------------------- 
-       1. AUTH / SESSION CHECK 
-       ------------------------- */
-    let isLoggedIn = false;
 
+<script>
+    /* For signup or logout */
     fetch('check_session.php')
         .then(response => response.json())
         .then(data => {
             const authLink = document.getElementById('auth-link');
             const authText = document.getElementById('auth-text');
-
             if (data.loggedIn) {
-                isLoggedIn = true;
-                // Pre-fill name if logged in
-                if(document.getElementById('name')) {
-                    document.getElementById('name').value = data.name;
-                }
-                // Handle Logout UI
-                if(authLink && authText) {
-                    authLink.href = "javascript:void(0)";
-                    authLink.onclick = function() {
-                        if(confirm("Are you sure you want to log out?")) {
-                            window.location.href = 'logout.php';
-                        }
-                    };
-                    authText.innerText = "Logout (" + data.name + ")";
-                }
+                authLink.href = "javascript:void(0)";
+                authLink.onclick = function() {
+                    if(confirm("Are you sure you want to log out?")) {
+                        window.location.href = 'logout.php';
+                    }
+                };
+                authText.innerText = "Logout (" + data.name + ")";
             }
         })
         .catch(err => console.error("Session check failed", err));
 
-    /* ------------------------- 
-       2. RENDER CART PRODUCTS 
-       ------------------------- */
     const CART_KEY = "cartItems";
+    // FIXED: Added || symbol here
     const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
     const productsDiv = document.getElementById("products");
     let subtotal = 0;
+    let isLoggedIn = false;
 
-    if(productsDiv) {
-        if(cart.length === 0){
-            productsDiv.innerHTML = "<p>No products in your bag</p>";
-        } else {
-            cart.forEach(p => {
-                subtotal += p.price * p.qty;
-                productsDiv.innerHTML += `
-                    <div class="product">
-                        <div class="qty-badge">${p.qty}</div>
-                        <img src="${p.img || p.image || 'https://via.placeholder.com/150'}">
-                        <div class="info">
-                            <strong>${p.name}</strong>
-                            ETB ${(p.price * p.qty).toFixed(2)}
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        document.getElementById("subtotal").innerText = "ETB " + subtotal.toFixed(2);
-        document.getElementById("total").innerText = "ETB " + subtotal.toFixed(2);
+    /* 1. CHECK SESSION IN BACKGROUND */
+    fetch('check_session.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.loggedIn) {
+                isLoggedIn = true;
+                if(!document.getElementById('name').value) {
+                    document.getElementById('name').value = data.name;
+                }
+            }
+        });
+
+    /* RENDER PRODUCTS */
+    if(cart.length === 0){
+        productsDiv.innerHTML = "<p>No products in your bag</p>";
     }
+    cart.forEach(p=>{
+        subtotal += p.price * p.qty;
+        // FIXED: Added || for images
+        productsDiv.innerHTML += `
+            <div class="product">
+                <div class="qty-badge">${p.qty}</div>
+                <img src="${p.img || p.image || 'https://via.placeholder.com/150'}">
+                <div class="info">
+                    <strong>${p.name}</strong>
+                    ETB ${(p.price * p.qty).toFixed(2)}
+                </div>
+            </div>
+        `;
+    });
+    document.getElementById("subtotal").innerText = "ETB " + subtotal.toFixed(2);
+    document.getElementById("total").innerText = "ETB " + subtotal.toFixed(2);
 
-    /* ------------------------- 
-       3. PAYMENT & ORDER LOGIC 
-       ------------------------- */
-
-    // Toggle Payment Proof upload box
-    document.querySelectorAll("input[name='pay']").forEach(r => {
-        r.addEventListener("change", () => {
+    /* PAYMENT TOGGLE */
+    document.querySelectorAll("input[name='pay']").forEach(r=>{
+        r.addEventListener("change",()=>{
             const uploadBox = document.getElementById("uploadBox");
             if(r.value === "Transfer" && r.checked){
                 uploadBox.style.display = "block";
@@ -1232,13 +1226,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
         });
     });
 
-    // Handle the Order Button Click
-    function handleOrderClick() {
-        const nameInput = document.getElementById("name");
-        const phoneInput = document.getElementById("phone");
-        const name = nameInput ? nameInput.value.trim() : "";
-        const phone = phoneInput ? phoneInput.value.trim() : "";
+    function smallCloudinary(url) {
+        if(!url) return "https://via.placeholder.com/150";
+        return url.replace("/upload/", "/upload/w_300,h_300,c_fit,q_60,f_jpg/");
+    }
 
+    function handleOrderClick() {
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
         if(!name || !phone){
             alert("Please fill name and phone number first.");
             return;
@@ -1251,33 +1246,26 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
             if (userChoice) {
                 window.location.href = "login.html"; 
             } else {
-                const mainContent = document.getElementById('main-content');
-                if(mainContent) {
-                    mainContent.innerHTML = `
-                    <div class="denied-container" style="text-align:center; padding:50px;">
-                            <h2 style="color:red;">Order Not Allowed</h2>
-                            <p>Ordering is only allowed for registered members. Please create an account or login to continue.</p>
-                            <br>
-                            <button onclick="window.location.href='home.html'" style="padding:15px; background:#007bff; color:#fff; border:none; border-radius:25px; cursor:pointer; width:100%;">BACK TO HOME</button>
-                        </div>
-                    `;
-                }
+                document.getElementById('main-content').innerHTML = `
+                    <div class="denied-container">
+                        <h2 class="denied-text" style="color:red;">Order Not Allowed</h2>
+                        <p>Ordering is only allowed for registered members. Please create an account or login to continue.</p>
+                        <br>
+                        <button onclick="window.location.href='home.html'" style="padding:15px; background:#007bff; color:#fff; border:none; border-radius:25px; cursor:pointer; width:100%;">BACK TO HOME</button>
+                    </div>
+                `;
             }
         }
     }
 
-    // Final Submission (Telegram + Email)
+    /* ------------------------- Handle Order Logic ------------------------- */
     async function submitOrder() {
         const name = document.getElementById("name").value.trim();
         const phone = document.getElementById("phone").value.trim();
         const payment = document.querySelector("input[name='pay']:checked").value;
         const proof = document.getElementById("proof");
 
-        const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";
-        const CHAT_ID = "5335234629";
-        const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-        // A. SEND TO EMAIL (order.php)
+        // 1. THIS IS THE ADDED PART FOR EMAIL
         const emailData = new FormData();
         emailData.append('name', name);
         emailData.append('phone', phone);
@@ -1289,106 +1277,91 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
             .then(res => res.json())
             .catch(err => console.log("Email tracking..."));
 
-        // B. SEND TO TELEGRAM
+        // 2. SEND TO TELEGRAM (Your original logic)
+        const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";
+        const CHAT_ID = "5335234629";
+        const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
         let tgMsg = `🛒 *NEW ORDER - EBRO SHOP*\n\n`;
         tgMsg += `👤 *Name:* ${name}\n`;
         tgMsg += `📞 *Phone:* ${phone}\n`;
         tgMsg += `💳 *Pay:* ${payment}\n\n`;
         tgMsg += `📦 *Products:* \n`;
         cart.forEach(p => {
-            tgMsg +=` - ${p.name} (x${p.qty})\n`;
+            tgMsg += `- ${p.name} (x${p.qty})\n`;
         });
         tgMsg += `\n💰 *Total: ETB ${subtotal.toFixed(2)}*`;
 
         try {
-            // Send Text Data
             await fetch(`${API}/sendMessage`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ chat_id: CHAT_ID, text: tgMsg, parse_mode: "Markdown" })
             });
 
-            // Send Transfer Proof if it exists
-            if (payment === "Transfer" && proof && proof.files.length > 0) {
+            /* SEND TRANSFER PROOF */
+            if (payment === "Transfer" && proof.files.length) {
                 const form = new FormData();
                 form.append("chat_id", CHAT_ID);
                 form.append("document", proof.files[0]);
-                form.append("caption", `💳 Transfer Proof from ${name}`);
+                form.append("caption", "💳 Transfer Proof");
                 await fetch(`${API}/sendDocument`, { method: "POST", body: form });
             }
 
             localStorage.removeItem(CART_KEY);
             alert("Success! Your order has been sent.");
             window.location.href = "success.html";
-        } catch (e) {
-            console.error(e);
-            alert("Error sending order to Telegram.");
+
+        } catch (error) {
+            console.error("Order Error:", error);
+            alert("Something went wrong. Please try again.");
         }
     }
 
-    // Connect function to button
-    const orderBtn = document.querySelector(".btn-order");
-    if(orderBtn) orderBtn.onclick = handleOrderClick;
+    // Bind button
+    const btnOrder = document.querySelector(".btn-order");
+    if(btnOrder) btnOrder.onclick = handleOrderClick;
 
-    /* ------------------------- 
-       4. SHARED HEADER & SEARCH (allProducts) 
-       ------------------------- */
+    /* ------------------------- Header & Search Part ------------------------- */
     (function(){
         const allProducts = [
             { id:1, name:"Rooti Slice Cad...", price:1.00, image:"https://via.placeholder.com/600x400", category:"Bread", tags:["slice"], description:"Fresh bread" },
-            { id:2, name:"Rooti Qamadi...", price:1.00, image:"https://via.placeholder.com/600x400", category:"Bread", tags:["qamadi"], description:"Soft bread" },
-            { id:3, name:"Rooti Beegar...", price:0.50, image:"https://via.placeholder.com/600x400", category:"Bread", tags:["beegar"], description:"Round bread" },
-            { id:4, name:"Ceesh (Arabic)", price:1.00, image:"https://via.placeholder.com/600x400", category:"Flatbread", tags:["arabic"], description:"Flatbread" },
-            { id:5, name:"Pasta Italian", price:1.20, image:"https://via.placeholder.com/600x400", category:"Food", tags:["pasta"], description:"Pasta" },
-            { id:6, name:"Rice 5kg", price:5.00, image:"https://via.placeholder.com/600x400", category:"Rice", tags:["white"], description:"Rice" },
-            { id:7, name:"Egg Pack", price:3.00, image:"https://via.placeholder.com/600x400", category:"Dairy", tags:["egg"], description:"Eggs" }
+            { id:2, name:"Rooti Qamadi...", price:1.00, image:"https://via.placeholder.com/600x400", category:"Bread", tags:["qamadi"], description:"Soft bread" }
         ];
 
         const hamburger = document.getElementById("hamburgerBtn");
         const sideMenu = document.getElementById("sideMenu");
         const menuOverlay = document.getElementById("menuOverlay");
-        const searchBtn = document.getElementById("searchBtn");
-        const searchInput = document.getElementById("searchInput");
         const badge = document.getElementById("cartBadge");
 
-        window.updateCartBadge = function(){
+        function updateBadge(){
             const c = JSON.parse(localStorage.getItem("cartItems")) || [];
             const total = c.reduce((s,i)=> s + (i.qty||0), 0);
             if(badge) {
                 badge.style.display = total > 0 ? "flex" : "none";
                 badge.innerText = total;
             }
-        };
-        updateCartBadge();
+        }
+        updateBadge();
 
         window.quickAdd = function(id){
             const product = allProducts.find(p => p.id == id);
+
             if(!product) return;
             let c = JSON.parse(localStorage.getItem("cartItems")) || [];
             const existing = c.find(it => it.id == product.id);
             if(existing){ existing.qty++; } 
             else { c.push({ id: product.id, name: product.name, img: product.image, price: product.price, qty: 1 }); }
             localStorage.setItem("cartItems", JSON.stringify(c));
-            updateCartBadge();
+            updateBadge();
             alert(product.name + " added!");
         };
 
-        if(hamburger) hamburger.addEventListener("click", () => { sideMenu.style.left = "0"; menuOverlay.style.display = "block"; });
-        if(menuOverlay) menuOverlay.addEventListener("click", () => { sideMenu.style.left = "-320px"; menuOverlay.style.display = "none"; });
-        
-        if(searchInput) {
-            searchInput.addEventListener("input", function(){
-                const q = this.value.toLowerCase();
-                const results = allProducts.filter(p => p.name.toLowerCase().includes(q));
-                const resultsDiv = document.getElementById("searchResults");
-                if(resultsDiv) resultsDiv.innerHTML = results.map(p => <div onclick="quickAdd(${p.id})">${p.name}</div>).join('');
-            });
-        }
+        if(hamburger) hamburger.onclick = () => { sideMenu.style.left = "0"; menuOverlay.style.display = "block"; };
+        if(menuOverlay) menuOverlay.onclick = () => { sideMenu.style.left = "-320px"; menuOverlay.style.display = "none"; };
     })();
 
-    /* ------------------------- 
-       5. FAQ & ANIMATIONS 
-       ------------------------- */
+    /* About part animations */
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
             if (entry.isIntersecting) entry.target.classList.add('visible');
@@ -1396,18 +1369,13 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
     }, { threshold: 0.3 });
     document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 
+    /* FAQ */
     function toggleSection(id, header) {
         const content = document.getElementById(id);
         const icon = header.querySelector('.toggle');
-        if (content.classList.contains('hidden')) {
-            content.classList.remove('hidden');
-            icon.textContent = '−';
-        } else {
-            content.classList.add('hidden');
-            icon.textContent = '+';
-        }
+        content.classList.toggle('hidden');
+        icon.textContent = content.classList.contains('hidden') ? '+' : '−';
     }
 </script>
-
 </body>
 </html>
