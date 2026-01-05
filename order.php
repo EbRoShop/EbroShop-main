@@ -25,18 +25,29 @@ if ($input && $apiKey) {
     // 1. First, check if the email is in the current session
     if (isset($_SESSION['email'])) {
         $customerEmail = $_SESSION['email'];
+        $user_id = $_SESSION['user_id']; // <--- ADD THIS LINE
     } 
     // 2. If not, search the 'users' table for the registered email
     else {
         // We look for a match in first_name (like Rebyu)
-        $search = "SELECT email FROM users WHERE first_name = '$name' OR CONCAT(first_name, ' ', last_name) = '$name' LIMIT 1";
+        $search = "SELECT id, email FROM users WHERE first_name = '$name' LIMIT 1"; // <--- ADD 'id' HERE
         $res = $conn->query($search);
         if ($res && $res->num_rows > 0) {
             $row = $res->fetch_assoc();
             $customerEmail = $row['email'];
+            $user_id = $row['id']; // <--- ADD THIS LINE
         }
     }
 
+
+    // --- ADD THIS BLOCK HERE ---
+    // This saves the order to the database so it appears in history
+    $sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
+                    VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
+    $conn->query($sql_history);
+    // ---------------------------
+
+    
     // --- SEND EMAIL TO THE CUSTOMER ---
     if ($customerEmail) {
         $rows = "";
