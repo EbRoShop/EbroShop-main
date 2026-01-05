@@ -1,20 +1,20 @@
 <?php
 session_start();
-// Prevent any PHP warnings from breaking the JSON response to your JavaScript
+// Hide system errors so they don't break the Telegram part in JavaScript
 error_reporting(0);
 header('Content-Type: application/json');
 
-// Using the same database connection as your registration script
-include 'db.php';
+// 1. Use your working database connection
+include 'db.php'; 
 
-// Get the Brevo Key from your Render Environment
+// 2. Get Brevo Key from Render Environment
 $apiKey = getenv('BREVO_API_KEY');
 
 $input = json_decode(file_get_contents('php://input'), true);
 
 if ($input && $apiKey) {
-    // Sanitize the name just like in register.php
-    $name = mysqli_real_escape_string($conn, $input['name']);
+    // Sanitize the name just like register.php does
+    $name = mysqli_real_escape_string($conn, $input['name']); 
     $phone = $input['phone'];
     $payment = $input['payment'];
     $total = $input['total'];
@@ -24,12 +24,13 @@ if ($input && $apiKey) {
     // --- STEP 1: FIND THE USER'S REGISTERED EMAIL ---
     $customerEmail = null;
 
-    // Check the session first
+    // Check if user is logged in
     if (isset($_SESSION['email'])) {
         $customerEmail = $_SESSION['email'];
     } 
-    // If not logged in, search the database for the email matching the first name
+    // If not logged in, SEARCH the database for the user's registered email
     else {
+        // We look for a user whose first name matches the name entered in checkout
         $search = "SELECT email FROM users WHERE first_name LIKE '%$name%' LIMIT 1";
         $res = $conn->query($search);
         if ($res && $res->num_rows > 0) {
@@ -38,16 +39,17 @@ if ($input && $apiKey) {
         }
     }
 
-    // --- STEP 2: SEND EMAIL ONLY IF WE FOUND THE USER ---
-    if ($customerEmail) {
-        // Build Table Rows
+    // --- STEP 2: SEND EMAIL ONLY TO THE CUSTOMER ---
+    if ($customerEmail && $customerEmail != 'ebroshoponline@gmail.com') {
+        
+        // Build Product Table (Matching your professional screenshot)
         $rows = "";
         foreach($cart as $p) {
-            $sub = $p['price'] * $p['qty'];
+            $itemTotal = $p['price'] * $p['qty'];
             $rows .= "<tr>
-                        <td style='padding:12px; border-bottom:1px solid #eee; color:#333;'>{$p['name']}</td>
+                        <td style='padding:12px; border-bottom:1px solid #eee;'>{$p['name']}</td>
                         <td style='padding:12px; border-bottom:1px solid #eee; text-align:center;'>{$p['qty']}</td>
-                        <td style='padding:12px; border-bottom:1px solid #eee; text-align:right;'>ETB " . number_format($sub, 2) . "</td>
+                        <td style='padding:12px; border-bottom:1px solid #eee; text-align:right;'>ETB " . number_format($itemTotal, 2) . "</td>
                       </tr>";
         }
 
@@ -56,41 +58,36 @@ if ($input && $apiKey) {
 
         $data = array(
             "sender" => array("name" => "EbRoShop", "email" => $senderEmail),
-            "to" => array(array("email" => $customerEmail, "name" => $name)), // THIS SENDS TO THE USER
-            "subject" => "Thank you for your order! #$order_id",
+            "to" => array(array("email" => $customerEmail, "name" => $name)), // This sends to the USER!
+            "subject" => "Receipt for Order #$order_id - EbRo Shop",
             "htmlContent" => "
                 <div style='font-family:Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius:10px;'>
-                    <div style='text-align: center; border-bottom: 2px solid #136835; padding-bottom: 15px; margin-bottom: 20px;'>
-                        <img src='$logoUrl' alt='EbRoShop' style='width: 200px;'>
+                    <div style='text-align: center; border-bottom: 2px solid #136835; padding-bottom: 10px; margin-bottom: 20px;'>
+                        <img src='$logoUrl' style='width: 200px;'>
                     </div>
-
                     <h2 style='color: #136835; text-align: center;'>Thank you for your order!</h2>
-                    <p style='color:#555;'>Hello <b>$name</b>, your order has been received and is being processed.</p>
-
-                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                    <p>Hello <b>$name</b>, your order has been received and is being processed.</p>
+                    <table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>
                         <tr style='background: #222; color: white;'>
-                            <th style='padding:12px; text-align:left;'>Product</th>
-                            <th style='padding:12px;'>Qty</th>
-                            <th style='padding:12px; text-align:right;'>Price</th>
+                            <th style='padding:10px; text-align:left;'>Item</th>
+                            <th style='padding:10px;'>Qty</th>
+                            <th style='padding:10px; text-align:right;'>Price</th>
                         </tr>
                         $rows
-                        <tr style='font-weight: bold; font-size: 18px;'>
-                            <td colspan='2' style='padding:20px 12px; text-align:right;'>Total Amount:</td>
-                            <td style='padding:20px 12px; text-align:right; color:#136835;'>ETB " . number_format($total, 2) . "</td>
-                        </tr>
+                        <tr style='font-weight: bold;'>
+                            <td colspan='2' style='padding:15px; text-align:right;'>Total Amount:</td>
+                            <td style='padding:15px; text-align:right; color:#136835;'>ETB " . number_format($total, 2) . "</td>
+                            </tr>
                     </table>
-                    <div style='background:#f9f9f9; padding:15px; border-radius:5px; border-left: 4px solid #136835;'>
-                        <p style='margin:5px 0;'><b>Phone:</b> $phone</p>
-                        <p style='margin:5px 0;'><b>Payment:</b> $payment</p>
-                    </div>
-
-                    <p style='font-size: 12px; color: #777; margin-top: 30px; text-align: center;'>
-                        Contact us at <a href='mailto:$senderEmail'>$senderEmail</a> or <b>+251970130755</b>
+                    <p><b>Phone:</b> $phone | <b>Payment:</b> $payment</p>
+                    <hr style='border:none; border-top:1px solid #eee; margin:20px 0;'>
+                    <p style='font-size: 12px; color: #777; text-align: center;'>
+                        Contact us at $senderEmail or +251970130755
                     </p>
                 </div>"
         );
 
-        // Same cURL settings as register.php
+        // Same cURL settings as your register.php
         $ch = curl_init('https://api.brevo.com/v3/smtp/email');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
@@ -104,7 +101,7 @@ if ($input && $apiKey) {
         curl_close($ch);
     }
 
-    // Always return success so JavaScript can finish the Telegram part
+    // Always send success to JavaScript so Telegram part can start
     echo json_encode(["success" => true, "order_id" => $order_id]);
 }
 ?>
