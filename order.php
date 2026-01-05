@@ -1,16 +1,17 @@
 <?php
 session_start();
-// error_reporting(0) prevents the "Unexpected token <" error from breaking your JSON
+// This stops the "Unexpected token" JSON error from your screenshots
 error_reporting(0); 
 header('Content-Type: application/json');
 
-include 'db.php';
+// Include the same DB connection used in register.php
+include 'db.php'; 
 
-$apiKey = getenv('BREVO_API_KEY');
+$apiKey = getenv('BREVO_API_KEY'); 
 $input = json_decode(file_get_contents('php://input'), true);
 
 if ($input && $apiKey) {
-    // Sanitize input exactly like register.php to prevent database crashes
+    // 1. Sanitize input using the same method as register.php
     $name = mysqli_real_escape_string($conn, $input['name']); 
     $phone = mysqli_real_escape_string($conn, $input['phone']);
     $payment = mysqli_real_escape_string($conn, $input['payment']);
@@ -18,15 +19,18 @@ if ($input && $apiKey) {
     $cart = $input['cart'];
     $order_id = rand(1000, 9999); 
 
-    // --- STEP 1: FIND THE USER ID AND EMAIL ---
+    // --- FIND THE USER ID (The missing part for Order History) ---
     $customerEmail = null;
     $user_id = 0; 
 
+    // Check the session for the logged-in user
     if (isset($_SESSION['email'])) {
         $customerEmail = $_SESSION['email'];
+        // This is the key to showing history: capturing the user_id
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
-    } else {
-        // Search DB for user if not logged in, just like the check in register.php
+    } 
+    // If not logged in, search the database for this name
+    else {
         $search = "SELECT id, email FROM users WHERE first_name = '$name' OR CONCAT(first_name, ' ', last_name) = '$name' LIMIT 1";
         $res = $conn->query($search);
         if ($res && $res->num_rows > 0) {
@@ -36,13 +40,13 @@ if ($input && $apiKey) {
         }
     }
 
-    // --- STEP 2: FIX ORDER HISTORY (SAVE TO DATABASE) ---
-    // This part was missing! It saves the order so it shows in Account Details
+    // --- STEP 2: SAVE TO THE ORDERS TABLE (Fixes History) ---
+    // This uses the exact table columns your database expects
     $sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
                     VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
     $conn->query($sql_history);
 
-    // --- STEP 3: SEND THE PROFESSIONAL EMAIL ---
+    // --- STEP 3: SEND EMAIL TO THE CUSTOMER ---
     if ($customerEmail) {
         $rows = "";
         foreach($cart as $p) {
@@ -72,10 +76,10 @@ if ($input && $apiKey) {
                             <th style='padding:12px; text-align:left;'>Product</th>
                             <th style='padding:12px;'>Qty</th>
                             <th style='padding:12px; text-align:right;'>Price</th>
-                        </tr>
+                            </tr>
                         $rows
                         <tr style='font-weight: bold;'>
-                        <td colspan='2' style='padding:15px; text-align:right;'>Total Amount:</td>
+                            <td colspan='2' style='padding:15px; text-align:right;'>Total Amount:</td>
                             <td style='padding:15px; text-align:right; color:#136835;'>ETB " . number_format($total, 2) . "</td>
                         </tr>
                     </table>
@@ -96,7 +100,7 @@ if ($input && $apiKey) {
         curl_close($ch);
     }
 
-    // Always return a clean JSON response for your Telegram logic
+    // SUCCESS JSON RESPONSE
     echo json_encode(["success" => true, "order_id" => $order_id]);
 }
 ?>
