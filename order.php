@@ -1,7 +1,7 @@
 <?php
 // Start session to access logged-in user info
 session_start();
-// Hide all warnings to prevent the JSON "Unexpected token" error
+// Stop PHP from printing errors as HTML to fix the "Unexpected token" error
 error_reporting(0); 
 header('Content-Type: application/json');
 
@@ -20,16 +20,16 @@ if ($input && $apiKey) {
     $cart = $input['cart'];
     $order_id = rand(1000, 9999); 
 
-    // --- FIND THE USER'S EMAIL & ID (From Register/Session logic) ---
+    // --- FIND THE USER'S EMAIL & ID (The Register Logic) ---
     $customerEmail = null;
     $user_id = 0; 
 
-    // Check if the user is currently logged in
+    // 2. Check if the user is currently logged in
     if (isset($_SESSION['email'])) {
         $customerEmail = $_SESSION['email'];
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
     } 
-    // Search the 'users' table if the session is missing
+    // 3. Search the 'users' table if the session is missing
     else {
         $search = "SELECT id, email FROM users WHERE first_name = '$name' OR CONCAT(first_name, ' ', last_name) = '$name' LIMIT 1";
         $res = $conn->query($search);
@@ -40,13 +40,13 @@ if ($input && $apiKey) {
         }
     }
 
-    // --- SAVE TO ORDER HISTORY (Matches register.php INSERT logic) ---
-    // This part ensures your "Account Details" will show the order history
+    // --- SAVE TO ORDER HISTORY (The Database Part) ---
+    // This uses the exact SQL style from register.php to save your order history
     $sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
                     VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
     $conn->query($sql_history);
 
-    // --- SEND THE PROFESSIONAL EMAIL TO THE CUSTOMER ---
+    // --- SEND PROFESSIONAL EMAIL TO THE CUSTOMER ---
     if ($customerEmail) {
         $rows = "";
         foreach($cart as $p) {
@@ -58,7 +58,7 @@ if ($input && $apiKey) {
                       </tr>";
         }
 
-        // Using your verified Logo and sender details
+        // Using your verified Cloudinary Logo and sender info
         $logoUrl = "https://res.cloudinary.com/die8hxris/image/upload/v1767382208/n8ixozf4lj5wfhtz2val.jpg";
         $senderEmail = 'ebroshoponline@gmail.com';
 
@@ -69,10 +69,10 @@ if ($input && $apiKey) {
             "htmlContent" => "
                 <div style='font-family:Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius:10px;'>
                     <div style='text-align: center; border-bottom: 2px solid #136835; padding-bottom: 15px; margin-bottom: 20px;'>
-                        <img src='$logoUrl' alt='EbRoShop Logo' style='width: 200px;'>
+                        <img src='$logoUrl' alt='EbRoShop' style='width: 200px;'>
                     </div>
                     <h2 style='color: #136835; text-align: center;'>Thank you for your order!</h2>
-                    <p>Hello <b>$name</b>, we have received your order.</p>
+                    <p>Hello <b>$name</b>, your order has been received.</p>
                     <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
                         <tr style='background: #222; color: white;'>
                             <th style='padding:12px; text-align:left;'>Product</th>
@@ -92,7 +92,7 @@ if ($input && $apiKey) {
                 </div>"
         );
 
-        // Same cURL settings as your working register.php
+        // Same cURL settings that work in register.php
         $ch = curl_init('https://api.brevo.com/v3/smtp/email');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
@@ -106,7 +106,7 @@ if ($input && $apiKey) {
         curl_close($ch);
     }
 
-    // Always send success to the browser for Telegram to proceed
+    // Always return success for the Telegram logic to finish
     echo json_encode(["success" => true, "order_id" => $order_id]);
 }
 ?>
