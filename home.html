@@ -5,6 +5,11 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+
 <title>EbRoShop Header - Fixed</title>
 
 <style>
@@ -458,6 +463,79 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
   .cart {
     position: relative;
   }
+
+
+
+
+
+
+  /*For language*/
+  /* Import Amharic Unicode Font */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;700&display=swap');
+
+.lang-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.selected-lang {
+    background: #fff;
+    color: #333;
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.selected-lang img { width: 20px; margin-right: 8px; }
+
+.lang-menu ul {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    display: none; /* Desktop hover handles this */
+    width: 140px;
+    z-index: 999;
+}
+
+.lang-menu ul li a {
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+}
+
+.lang-menu ul li a:hover { background: #f4f4f4; }
+.lang-menu ul li a img { width: 20px; margin-right: 10px; }
+
+/* Desktop Hover */
+.lang-menu:hover ul { display: block; }
+
+/* AMHARIC FONT FIX: Apply to whole site when translated */
+:lang(am), .translated-ltr {
+    font-family: 'Noto Sans Ethiopic', sans-serif !important;
+}
+
+/* Hide Google's original Top Bar */
+.goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+body { top: 0px !important; }
+
+/* Mobile logic */
+@media (max-width: 768px) {
+    .selected-lang { padding: 12px; font-size: 16px; }
+}
+
+
 </style>
 </head>
 <body>
@@ -550,6 +628,26 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff}
   </div>
   <div id="auth-text" style="font-size:14px; font-weight: 800;color: #0d4a7e;">Signup or Register</div>
 </a>
+
+
+
+
+
+<div class="lang-menu">
+    <div class="selected-lang" id="active-lang">
+        <img src="https://flagcdn.com/w20/gb.png" id="header-flag"> 
+        <span id="header-text">English</span>
+    </div>
+    <ul id="lang-dropdown">
+        <li><a href="javascript:void(0);" onclick="changeLanguage('en')"><img src="https://flagcdn.com/w20/gb.png"> English</a></li>
+        <li><a href="javascript:void(0);" onclick="changeLanguage('am')"><img src="https://flagcdn.com/w20/et.png"> አማርኛ</a></li>
+    </ul>
+</div>
+
+<div id="google_translate_element" style="display:none;"></div>
+
+
+
 
 <!-- Main Links -->
   <a href="home.html" class="menu-item">
@@ -2846,7 +2944,53 @@ function toggleSection(id, header) {
         icon.textContent = '+';
     }
 }
+
 </script>
 
+
+<script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script type="text/javascript">
+    // Initialize the Google Translate Element
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'en,am',
+            autoDisplay: false
+        }, 'google_translate_element');
+    }
+
+    // Function to handle language switching and Reset
+    function changeLanguage(langCode) {
+        try {
+            if (langCode === 'en') {
+                // Reset: Clear the Google Translate cookies
+                document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + document.domain + "; path=/;";
+            } else {
+                // Set the translation cookie for Amharic
+                document.cookie = "googtrans=/en/" + langCode + "; path=/";
+                document.cookie = "googtrans=/en/" + langCode + "; domain=" + document.domain + "; path=/";
+            }
+            location.reload();
+        } catch (error) {
+            console.error("Language switch error:", error);
+        }
+    }
+
+    // Update the Button UI on page load
+    window.addEventListener('load', function() {
+        const cookieRow = document.cookie.split('; ').find(row => row.startsWith('googtrans='));
+        
+        if (cookieRow && cookieRow.includes('/am')) {
+            const flag = document.getElementById('header-flag');
+            const text = document.getElementById('header-text');
+            
+            // Check if elements exist before changing them to avoid red errors
+            if (flag) flag.src = "https://flagcdn.com/w20/et.png";
+            if (text) text.innerText = "አማርኛ";
+        }
+    });
+</script>
 </body>
 </html>
