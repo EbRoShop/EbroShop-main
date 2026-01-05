@@ -1,5 +1,10 @@
 <?php
 // Start session to access logged-in user info
+ob_start();
+
+
+
+
 session_start();
 error_reporting(0); 
 header('Content-Type: application/json');
@@ -107,6 +112,7 @@ $conn->query($sql_history);
         curl_close($ch);
     }
 
-    echo json_encode(["success" => true, "order_id" => $order_id]);
+    ob_end_clean(); // Clears hidden <br /> warnings
+echo json_encode(["success" => true, "order_id" => $order_id]);
 }
 ?>
