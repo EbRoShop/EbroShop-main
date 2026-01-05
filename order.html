@@ -1246,7 +1246,6 @@ function handleOrderClick() {
 
 
 
-
 async function submitOrder() {
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
@@ -1254,14 +1253,13 @@ async function submitOrder() {
   const proof = document.getElementById("proof");
 
   if (!name || !phone) { alert("Please fill name and phone"); return; }
-  if (payment === "Transfer" && !proof.files.length) { alert("Please upload proof"); return; }
-
-  alert("Sending your receipt to email...");
+  
+  alert("Sending email receipt...");
 
   try {
     const orderData = { name, phone, payment, total: subtotal, cart };
 
-    // CALL PHP
+    // 1. Send to PHP for Email
     const dbResponse = await fetch('order.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1270,18 +1268,16 @@ async function submitOrder() {
 
     const dbResult = await dbResponse.json();
 
-    // IF EMAIL FAILS, SHOW REASON
     if (!dbResult.success) {
       alert("❌ EMAIL ERROR: " + dbResult.message);
       return; 
     }
 
-    // TELEGRAM PART (This runs only if Email was successful)
+    // 2. Send to Telegram (Images as Files/Documents)
     const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";
     const CHAT_ID = "5335234629";
     const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-    // Send Customer Info to Telegram
     await fetch(`${API}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1291,12 +1287,13 @@ async function submitOrder() {
       })
     });
 
-    // Send each product as a Document (File)
     for (const p of cart) {
       const docForm = new FormData();
       docForm.append("chat_id", CHAT_ID);
+      // Use smallCloudinary to ensure URL is safe for Telegram
       docForm.append("document", smallCloudinary(p.image || p.img));
-      docForm.append("caption", `${p.name} x${p.qty} = ETB ${(p.price * p.qty).toFixed(2)}`);
+      docForm.append("caption", `${p.name} (x${p.qty})`);
+      
       await fetch(`${API}/sendDocument`, { method: "POST", body: docForm });
     }
 
