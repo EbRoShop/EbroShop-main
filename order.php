@@ -1,70 +1,97 @@
 <?php
+// Start session to access logged-in user info
 session_start();
-// This stops the "Unexpected token" error by hiding database warnings
 error_reporting(0); 
 header('Content-Type: application/json');
 
-// 1. Include the database connection used in register.php
+// Include the same DB connection used in register.php
 include 'db.php'; 
 
-// 2. Get the API Key and site details from your register logic
 $apiKey = getenv('BREVO_API_KEY'); 
-$senderEmail = 'ebroshoponline@gmail.com';
-$logoUrl = "https://res.cloudinary.com/die8hxris/image/upload/v1767382208/n8ixozf4lj5wfhtz2val.jpg";
-
 $input = json_decode(file_get_contents('php://input'), true);
 
 if ($input && $apiKey) {
-    // 3. Sanitize inputs exactly like register.php
-    $fname = mysqli_real_escape_string($conn, $input['name']); 
+    // Sanitize input using the same method as register.php
+    $name = mysqli_real_escape_string($conn, $input['name']); 
     $phone = mysqli_real_escape_string($conn, $input['phone']);
     $payment = mysqli_real_escape_string($conn, $input['payment']);
-    $total = floatval($input['total']);
+    $total = $input['total'];
     $cart = $input['cart'];
     $order_id = rand(1000, 9999); 
 
-    // 4. Identify the user for Order History
-    $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+    // --- FIND THE USER'S EMAIL (The "Register Logic" Fix) ---
+    $customerEmail = null;
+    $user_id = 0; // Default if not found
 
-    // If session is lost, search for the user like the email check in register.php
-    if (empty($user_email)) {
-        $search = "SELECT id, email FROM users WHERE first_name = '$fname' LIMIT 1";
+    // 1. First, check if the email is in the current session
+    if (isset($_SESSION['email'])) {
+        $customerEmail = $_SESSION['email'];
+        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+    } 
+    // 2. If not, search the 'users' table for the registered email
+    else {
+        // We look for a match in first_name (like Rebyu)
+        $search = "SELECT id, email FROM users WHERE first_name = '$name' OR CONCAT(first_name, ' ', last_name) = '$name' LIMIT 1";
         $res = $conn->query($search);
         if ($res && $res->num_rows > 0) {
             $row = $res->fetch_assoc();
-            $user_email = $row['email'];
+            $customerEmail = $row['email'];
             $user_id = $row['id'];
         }
     }
 
-    // 5. SAVE TO ORDERS TABLE (This fixes your Order History)
-    $sql = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
-            VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
-    $conn->query($sql);
+    // --- NEW: SAVE TO ORDER HISTORY TABLE ---
+    // This uses the same $conn->query logic from your register.php
+    $sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
+                    VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
+    $conn->query($sql_history);
 
-    // 6. SEND THE EMAIL (Using the exact cURL settings from register.php)
-    if (!empty($user_email)) {
+    // --- SEND EMAIL TO THE CUSTOMER ---
+    if ($customerEmail) {
         $rows = "";
         foreach($cart as $p) {
             $sub = $p['price'] * $p['qty'];
-            $rows .= "<tr><td style='padding:10px; border-bottom:1px solid #eee;'>{$p['name']}</td><td style='text-align:center;'>{$p['qty']}</td><td style='text-align:right;'>ETB ".number_format($sub,2)."</td></tr>";
+            $rows .= "<tr>
+                        <td style='padding:12px; border-bottom:1px solid #eee;'>{$p['name']}</td>
+                        <td style='padding:12px; border-bottom:1px solid #eee; text-align:center;'>{$p['qty']}</td>
+                        <td style='padding:12px; border-bottom:1px solid #eee; text-align:right;'>ETB " . number_format($sub, 2) . "</td>
+                      </tr>";
         }
 
+        // Use your verified Cloudinary Logo
+        $logoUrl = "https://res.cloudinary.com/die8hxris/image/upload/v1767382208/n8ixozf4lj5wfhtz2val.jpg";
+
         $data = array(
-            "sender" => array("name" => "EbRoShop", "email" => $senderEmail),
-            "to" => array(array("email" => $user_email, "name" => $fname)),
-            "subject" => "Order Confirmation #$order_id",
+            "sender" => array("name" => "EbRoShop", "email" => "ebroshoponline@gmail.com"),
+            "to" => array(array("email" => $customerEmail, "name" => $name)), // SENDS TO USER
+            "subject" => "Your Order Confirmation #$order_id",
             "htmlContent" => "
-                <div style='font-family:Arial; max-width:600px; margin:auto; padding:20px; border:1px solid #eee;'>
-                    <img src='$logoUrl' style='width:200px;'>
-                    <h2 style='color:#136835;'>Thank you for your order!</h2>
-                    <table style='width:100%; border-collapse:collapse;'>$rows</table>
-                    <h3 style='text-align:right;'>Total: ETB ".number_format($total, 2)."</h3>
+                <div style='font-family:Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius:10px;'>
+                    <div style='text-align: center; border-bottom: 2px solid #136835; padding-bottom: 15px; margin-bottom: 20px;'>
+                        <img src='$logoUrl' alt='EbRoShop' style='width: 200px;'>
+                    </div>
+                    <h2 style='color: #136835; text-align: center;'>Thank you for your order!</h2>
+                    <p>Hello <b>$name</b>, your order has been received.</p>
+                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                        <tr style='background: #222; color: white;'>
+                            <th style='padding:12px; text-align:left;'>Product</th>
+                            <th style='padding:12px;'>Qty</th>
+                            <th style='padding:12px; text-align:right;'>Price</th>
+                            </tr>
+                        $rows
+                        <tr style='font-weight: bold;'>
+                            <td colspan='2' style='padding:15px; text-align:right;'>Total Amount:</td>
+                            <td style='padding:15px; text-align:right; color:#136835;'>ETB " . number_format($total, 2) . "</td>
+                        </tr>
+                    </table>
                     <p><b>Phone:</b> $phone | <b>Payment:</b> $payment</p>
+                    <p style='font-size: 12px; color: #777; text-align: center; margin-top: 30px;'>
+                        Contact us at ebroshoponline@gmail.com or +251970130755
+                    </p>
                 </div>"
         );
 
+        // Same cURL settings that work in register.php
         $ch = curl_init('https://api.brevo.com/v3/smtp/email');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
@@ -78,7 +105,6 @@ if ($input && $apiKey) {
         curl_close($ch);
     }
 
-    // 7. Success response for Telegram
     echo json_encode(["success" => true, "order_id" => $order_id]);
 }
 ?>
