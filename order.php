@@ -1,51 +1,60 @@
 <?php
 header('Content-Type: application/json');
 
-// 1. YOUR BREVO API KEY
-$apiKey = 'BREVO_API_KEY'; 
+// Get the API Key from Render Environment Variables
+$apiKey = getenv('BREVO_API_KEY'); 
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['name'];
-    $phone = $_POST['phone'];
-    $payment = $_POST['paymentMethod'];
-    $total = $_POST['totalPrice'];
-    $cartData = json_decode($_POST['cartData'], true);
+$input = json_decode(file_get_contents('php://input'), true);
 
-    $tableRows = "";
-    foreach ($cartData as $item) {
-        $rowTotal = $item['price'] * $item['qty'];
-        $tableRows .= "<tr>
-            <td style='padding:8px; border:1px solid #ddd;'>{$item['name']}</td>
-            <td style='padding:8px; border:1px solid #ddd; text-align:center;'>{$item['qty']}</td>
-            <td style='padding:8px; border:1px solid #ddd; text-align:right;'>ETB " . number_format($rowTotal, 2) . "</td>
-        </tr>";
+if ($input && $apiKey) {
+    $name = $input['name'];
+    $phone = $input['phone'];
+    $payment = $input['payment'];
+    $total = $input['total'];
+    $cart = $input['cart'];
+    $order_id = rand(1000, 9999); 
+
+    // Build product rows for email
+    $rows = "";
+    foreach($cart as $p) {
+        $st = $p['price'] * $p['qty'];
+        $rows .= "<tr><td>{$p['name']}</td><td>{$p['qty']}</td><td>ETB " . number_format($st, 2) . "</td></tr>";
     }
 
-    $data = [
-        "sender" => ["name" => "EbRo-Shop", "email" => "system@ebroshop.com"],
+    $emailData = [
+        "sender" => ["name" => "EbRo Shop", "email" => "system@ebroshop.com"],
         "to" => [["email" => "ebroshoponline@gmail.com"]],
-        "subject" => "New Order: $name",
-        "htmlContent" => "<html><body>
-            <h2>Order Details</h2>
-            <p><strong>Customer:</strong> $name</p>
-            <p><strong>Phone:</strong> $phone</p>
-            <p><strong>Payment:</strong> $payment</p>
-            <table border='1' style='border-collapse:collapse; width:100%;'>
-                <tr style='background:#f4f4f4;'><th>Item</th><th>Qty</th><th>Subtotal</th></tr>
-                $tableRows
-            </table>
-            <h3>Total: ETB " . number_format($total, 2) . "</h3>
-        </body></html>"
+        "subject" => "New Order #$order_id - $name",
+        "htmlContent" => "<h3>New Order Received</h3>
+                          <p><b>Customer:</b> $name</p>
+                          <p><b>Phone:</b> $phone</p>
+                          <p><b>Payment:</b> $payment</p>
+                          <table border='1' cellpadding='5' style='border-collapse:collapse;'>
+                            <tr style='background:#f4f4f4;'><th>Product</th><th>Qty</th><th>Subtotal</th></tr>
+                            $rows
+                          </table>
+                          <h4>Total: ETB " . number_format($total, 2) . "</h4>"
     ];
 
     $ch = curl_init('https://api.brevo.com/v3/smtp/email');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['api-key: '.$apiKey, 'Content-Type: application/json']);
-    curl_exec($ch);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($emailData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'api-key: ' . $apiKey,
+        'Content-Type: application/json'
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    
-    echo json_encode(["status" => "ok"]);
+
+    if ($httpCode < 300) {
+        echo json_encode(["success" => true, "order_id" => $order_id]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Email failed to send. Check API Key."]);
+    }
+} else {
+    echo json_encode(["success" => false, "message" => "Missing data or API Key not found in Environment Variables."]);
 }
 ?>
