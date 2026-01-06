@@ -1272,17 +1272,30 @@ async function submitOrder() {
       body: JSON.stringify(orderData)
     });
 
-    
 
-   // 1. Get the response as raw text first
+
+ // 1. Get the response as text first to handle the <br /> error
 const rawText = await dbResponse.text();
 
-// 2. THE FIX: Find where the JSON actually starts and skip the <br> tags
-const jsonStart = rawText.indexOf('{');
-const cleanJSON = rawText.substring(jsonStart);
+try {
+    // 2. THE CLEANER: Skip the <br /><b> errors and find the JSON data
+    const jsonStart = rawText.indexOf('{');
+    if (jsonStart === -1) throw new Error("No data found");
+    
+    const cleanJSON = rawText.substring(jsonStart);
+    const dbResult = JSON.parse(cleanJSON);
 
-// 3. Convert the clean text into a JavaScript object
-const dbResult = JSON.parse(cleanJSON);
+    if (dbResult.success) {
+        localStorage.removeItem('cart');
+        alert("Order Placed Successfully! ID: " + dbResult.order_id);
+        window.location.href = "account.html"; 
+    } else {
+        alert("Server Error: " + (dbResult.error || "Unknown error"));
+    }
+} catch (error) {
+    console.error("Server Response was:", rawText);
+    alert("System Error: Check the console for details.");
+}
 
 
 
