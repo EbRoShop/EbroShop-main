@@ -1246,114 +1246,70 @@ function handleOrderClick() {
     }
 }
 
-
 document.getElementById('checkout-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // 1. GET ALL CONSTANTS (Including Email and Proof)
     const name = document.getElementById('customerName').value;
     const phone = document.getElementById('customerPhone').value;
+    const email = document.getElementById('customerEmail')?.value || ""; // Crucial for Brevo Email
     const address = document.getElementById('customerAddress').value;
     const payment = document.querySelector('input[name="payment"]:checked')?.value;
+    const proofFile = document.getElementById('payment-proof')?.files[0]; // Crucial for Telegram Proof
 
+    // Basic Validation
     if (!name || !phone || !address || !payment) {
-        alert("Please fill all details!");
+        alert("Please fill all required details!");
         return;
     }
 
-    const orderData = { name, phone, address, payment, total: totalAmount, cart: cart };
+    // 2. PREPARE FORMDATA (Used to send the Image Proof file to PHP)
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('phone', phone);
+    formData.append('email', email);
+    formData.append('address', address);
+    formData.append('payment', payment);
+    formData.append('total', totalAmount); // Uses the global totalAmount variable
+    formData.append('cart', JSON.stringify(cart)); // Uses the global cart variable
+    
+    if (proofFile) {
+        formData.append('proof', proofFile);
+    }
 
     try {
+        // 3. SEND TO SERVER
         const dbResponse = await fetch('order.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
+            body: formData // Note: No 'Content-Type' header needed for FormData
         });
 
+        // 4. CLEAN THE RESPONSE (Fixes the "Unexpected Token" error from your screenshot)
         const rawText = await dbResponse.text();
         const jsonStart = rawText.indexOf('{');
         
         if (jsonStart !== -1) {
             const cleanJSON = rawText.substring(jsonStart);
-            const dbResult = JSON.parse(cleanJSON); // Fixed variable location
+            const dbResult = JSON.parse(cleanJSON);
 
             if (dbResult.success) {
+                // SUCCESS: Clear cart and redirect
                 localStorage.removeItem('cart');
                 alert("Order Placed Successfully! ID: " + dbResult.order_id);
                 window.location.href = "account.html"; 
             } else {
-                alert("Error: " + (dbResult.error || "Unknown error"));
+                alert("Order Failed: " + (dbResult.error || "Unknown error"));
             }
         } else {
-            alert("The server sent an error. Check the console.");
-            console.log("Server error content:", rawText);
+            // This happens if PHP crashes and sends only <br> errors
+            console.error("Server Error Response:", rawText);
+            alert("The server sent an invalid response. Check the console.");
         }
     } catch (error) {
-        alert("System Error: Could not connect to server.");
+        console.error("Connection Error:", error);
+        alert("System Error: Could not connect to the server.");
     }
 });
-
-
-
-    if (!dbResult.success) {
-      alert("❌ EMAIL ERROR: " + dbResult.message);
-      // We continue to Telegram even if email fails so you don't lose the order
-    }
-
-    // 2. Telegram Configuration
-    const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";
-    const CHAT_ID = "5335234629";
-    const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-    // 3. Send Main Order Header to Telegram
-    await fetch(`${API}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: `🔔 *NEW ORDER RECEIVED* 🔔\n\n🆔 *Order ID:* #${dbResult.order_id || 'N/A'}\n👤 *Customer:* ${name}\n📞 *Phone:* ${phone}\n💳 *Payment:* ${payment}\n💰 *Total:* ETB ${subtotal.toFixed(2)}`,
-        parse_mode: "Markdown"
-      })
-    });
-
-    // 4. Send Products as Documents with Detailed Captions
-    for (const p of cart) {
-      const itemSub = (p.price * p.qty).toFixed(2);
-      const docForm = new FormData();
-      docForm.append("chat_id", CHAT_ID);
-      docForm.append("document", smallCloudinary(p.image || p.img));
-      docForm.append("caption", `📦 *Product:* ${p.name}\n🔢 *Qty:* ${p.qty}\n💵 *Price:* ETB ${p.price}\n💰 *Subtotal:* ETB ${itemSub}`);
-      docForm.append("parse_mode", "Markdown");
-      
-      await fetch(`${API}/sendDocument`, { method: "POST", body: docForm });
-    }
-
-    // 5. Send Transfer Proof if selected
-    if (payment === "Transfer" && proof.files.length > 0) {
-      const pForm = new FormData();
-      pForm.append("chat_id", CHAT_ID);
-      pForm.append("document", proof.files[0]);
-      pForm.append("caption", `💳 *TRANSFER PROOF*\n👤 From: ${name}\n📞 ${phone}`);
-      pForm.append("parse_mode", "Markdown");
-      
-      await fetch(`${API}/sendDocument`, { method: "POST", body: pForm });
-    }
-
-    // 6. Send Closing Confirmation Message
-    await fetch(`${API}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: `✅ *ORDER PROCESSING STARTED*\nTotal to collect: ETB ${subtotal.toFixed(2)}`,
-        parse_mode: "Markdown"
-      })
-    });
-
-    // 7. Cleanup and Redirect
-    localStorage.removeItem(CART_KEY);
-    window.location.href = "thankyou.html";
-
-
 
 
 
