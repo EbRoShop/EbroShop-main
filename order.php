@@ -1,114 +1,119 @@
 <?php
-ob_start(); 
+// Start session to access logged-in user info
 session_start();
 error_reporting(0); 
 header('Content-Type: application/json');
 
+// Include the same DB connection used in register.php
 include 'db.php'; 
 
-// CONFIGURATION
 $apiKey = getenv('BREVO_API_KEY'); 
-$botToken = "8552120519:AAHYu7diuQjM8y-qy6I5jlqWm0IwB-y7RYM"; // Replace with your Bot Token
-$chatId = "5335234629";     // Replace with your Chat ID
+$input = json_decode(file_get_contents('php://input'), true);
 
-if ($_POST && $apiKey) {
-    // 1. COLLECT DATA FROM FORMDATA
-    $name    = mysqli_real_escape_string($conn, $_POST['name']); 
-    $phone   = mysqli_real_escape_string($conn, $_POST['phone']);
-    $email   = mysqli_real_escape_string($conn, $_POST['email']); 
-    $address = mysqli_real_escape_string($conn, $_POST['address']);
-    $payment = mysqli_real_escape_string($conn, $_POST['payment']);
-    $total   = $_POST['total'];
-    $cart    = json_decode($_POST['cart'], true);
-    $order_id = "ORD-" . rand(10000, 99999); 
+if ($input && $apiKey) {
+    // Sanitize input using the same method as register.php
+    $name = mysqli_real_escape_string($conn, $input['name']); 
+    $phone = $input['phone'];
+    $payment = $input['payment'];
+    $total = $input['total'];
+    $cart = $input['cart'];
+    $order_id = rand(1000, 9999); 
 
-    // 2. SAVE TO DATABASE (Just like register.php)
-    // We try to find the user_id based on the email provided
-    $user_id = 0;
-    $user_check = $conn->query("SELECT id FROM users WHERE email = '$email' LIMIT 1");
-    if($user_check && $user_check->num_rows > 0) {
-        $user_id = $user_check->fetch_assoc()['id'];
+    // --- FIND THE USER'S EMAIL (The "Register Logic" Fix) ---
+    $customerEmail = null;
+
+    // --- SAVE TO DATABASE (The Missing Part) ---
+$cart_json = mysqli_real_escape_string($conn, json_encode($cart)); // Convert cart array to text for DB
+$sql = "INSERT INTO orders (order_id, customer_name, customer_email, phone, payment_method, total_amount, cart_items) 
+        VALUES ('$order_id', '$name', '$customerEmail', '$phone', '$payment', '$total', '$cart_json')";
+
+if ($conn->query($sql)) {
+    $db_saved = true;
+} else {
+    $db_saved = false;
+    $db_error = $conn->error;
+}
+
+// --- SEND EMAIL LOGIC FOLLOWS ---
+// (Keep your existing Brevo and Response code here)
+
+    // 1. First, check if the email is in the current session
+    if (isset($_SESSION['email'])) {
+        $customerEmail = $_SESSION['email'];
+    } 
+    // 2. If not, search the 'users' table for the registered email
+    else {
+        // We look for a match in first_name (like Rebyu)
+        $search = "SELECT email FROM users WHERE first_name = '$name' OR CONCAT(first_name, ' ', last_name) = '$name' LIMIT 1";
+        $res = $conn->query($search);
+        if ($res && $res->num_rows > 0) {
+            $row = $res->fetch_assoc();
+            $customerEmail = $row['email'];
+        }
     }
 
-    $sql = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
-            VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
-    
-    if (!$conn->query($sql)) {
-        ob_end_clean();
-        echo json_encode(["success" => false, "error" => "DB Error: " . $conn->error]);
-        exit;
-    }
-
-    // 3. TELEGRAM PART (With Photo Proof)
-    $caption = "📦 *New Order $order_id*\n\n"
-             . "👤 Customer: $name\n"
-             . "📞 Phone: $phone\n"
-             . "💰 Total: ETB " . number_format($total, 2) . "\n"
-             . "💳 Method: $payment";
-
-    if (isset($_FILES['proof'])) {
-        $photo = $_FILES['proof']['tmp_name'];
-        $post_fields = [
-            'chat_id' => $chatId, 
-            'photo' => new CURLFile($photo), 
-            'caption' => $caption, 
-            'parse_mode' => 'Markdown'
-        ];
-        $ch = curl_init("https://api.telegram.org/bot$botToken/sendPhoto");
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($ch);
-        curl_close($ch);
-    }
-
-    // 4. EMAIL PART (Beautiful Design)
-    if (!empty($email)) {
+    // --- SEND EMAIL TO THE CUSTOMER ---
+    if ($customerEmail) {
         $rows = "";
         foreach($cart as $p) {
             $sub = $p['price'] * $p['qty'];
             $rows .= "<tr>
-                <td style='padding:10px; border-bottom:1px solid #eee;'>{$p['name']}</td>
-                <td style='padding:10px; border-bottom:1px solid #eee; text-align:center;'>{$p['qty']}</td>
-                <td style='padding:10px; border-bottom:1px solid #eee; text-align:right;'>ETB ".number_format($sub, 2)."</td>
-            </tr>";
+                        <td style='padding:12px; border-bottom:1px solid #eee;'>{$p['name']}</td>
+                        <td style='padding:12px; border-bottom:1px solid #eee; text-align:center;'>{$p['qty']}</td>
+                        <td style='padding:12px; border-bottom:1px solid #eee; text-align:right;'>ETB " . number_format($sub, 2) . "</td>
+                      </tr>";
         }
 
-        $htmlBody = "
-        <div style='font-family: Arial; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 10px;'>
-            <div style='background: #136835; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                <h1>Order Confirmed!</h1>
-            </div>
-            <div style='padding: 20px;'>
-                <p>Hello <b>$name</b>, your order <b>#$order_id</b> is being processed.</p>
-                <table style='width:100%; border-collapse: collapse;'>
-                    <thead><tr style='background:#f4f4f4;'><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>
-                    <tbody>$rows</tbody>
-                </table>
-                <h3 style='text-align:right; color:#136835;'>Total: ETB ".number_format($total, 2)."</h3>
-                <p><b>Payment:</b> $payment | <b>Phone:</b> $phone</p>
-            </div>
-            <div style='background: #f4f4f4; padding: 10px; text-align: center; font-size: 12px;'>
-                Thank you for choosing EbRoShop!
-            </div>
-        </div>";
-        $emailData = [
-            "sender" => ["name" => "EbRoShop", "email" => "ebroshoponline@gmail.com"],
-            "to" => [["email" => $email, "name" => $name]],
-            "subject" => "Your Receipt - Order $order_id",
-            "htmlContent" => $htmlBody
-        ];
+        // Use your verified Cloudinary Logo
+        $logoUrl = "https://res.cloudinary.com/die8hxris/image/upload/v1767382208/n8ixozf4lj5wfhtz2val.jpg";
 
+        $data = array(
+            "sender" => array("name" => "EbRoShop", "email" => "ebroshoponline@gmail.com"),
+            "to" => array(array("email" => $customerEmail, "name" => $name)), // SENDS TO USER
+            "subject" => "Your Order Confirmation #$order_id",
+            "htmlContent" => "
+                <div style='font-family:Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius:10px;'>
+                    <div style='text-align: center; border-bottom: 2px solid #136835; padding-bottom: 15px; margin-bottom: 20px;'>
+                        <img src='$logoUrl' alt='EbRoShop' style='width: 200px;'>
+                    </div>
+                    <h2 style='color: #136835; text-align: center;'>Thank you for your order!</h2>
+                    <p>Hello <b>$name</b>, your order has been received.</p>
+                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                        <tr style='background: #222; color: white;'>
+                            <th style='padding:12px; text-align:left;'>Product</th>
+                            <th style='padding:12px;'>Qty</th>
+                            <th style='padding:12px; text-align:right;'>Price</th>
+                        </tr>
+                        $rows
+                        <tr style='font-weight: bold;'>
+                            <td colspan='2' style='padding:15px; text-align:right;'>Total Amount:</td>
+                            <td style='padding:15px; text-align:right; color:#136835;'>ETB " . number_format($total, 2) . "</td>
+                        </tr>
+                    </table>
+                    <p><b>Phone:</b> $phone | <b>Payment:</b> $payment</p>
+                    <p style='font-size: 12px; color: #777; text-align: center; margin-top: 30px;'>
+                        Contact us at ebroshoponline@gmail.com or +251970130755
+                    </p>
+                </div>"
+        );
+        // Same cURL settings that work in register.php
         $ch = curl_init('https://api.brevo.com/v3/smtp/email');
-        curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($emailData));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['api-key: ' . $apiKey, 'Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'api-key: ' . $apiKey,
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ));
         curl_exec($ch);
         curl_close($ch);
     }
 
-    ob_end_clean(); 
-    echo json_encode(["success" => true, "order_id" => $order_id]);
+    echo json_encode([
+    'success' => $db_saved, 
+    'order_id' => $order_id,
+    'message' => $db_saved ? "Order saved" : "Database error: " . $db_error
+]);
 }
 ?>
