@@ -1274,14 +1274,9 @@ async function submitOrder() {
 
 
 
-    // 1. Get the response as raw text first
-const rawText = await dbResponse.text(); 
-
-// 2. Clean the text (remove hidden <br> tags) and then turn into JSON
-const dbResult = JSON.parse(rawText.trim()); 
-
-// 3. Log it to your browser console so you can see hidden errors
-console.log("Server Debug:", rawText);
+const rawText = await dbResponse.text();
+const cleanText = rawText.substring(rawText.indexOf('{')); // This removes any <br> tags at the start
+const dbResult = JSON.parse(cleanText);
 
 
 

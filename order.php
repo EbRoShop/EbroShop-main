@@ -1,6 +1,6 @@
 <?php
-session_start();
 ob_start(); // <--- ADD THIS HERE
+session_start();
 error_reporting(0);
 header('Content-Type: application/json');
 
@@ -21,7 +21,7 @@ if ($input && $apiKey) {
 
 
     // 1. GET THE USER ID (Add this inside your user search block)
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+$user_id = $_SESSION['user_id'] ?? 0;
 
 // 2. SAVE TO DATABASE (Add this before the email starts)
 $sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
