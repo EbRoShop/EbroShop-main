@@ -1,12 +1,7 @@
 <?php
-// Start session to access logged-in user info
-ob_start();
-
-
-
-
 session_start();
-error_reporting(0); 
+ob_start(); // <--- ADD THIS HERE
+error_reporting(0);
 header('Content-Type: application/json');
 
 // Include the same DB connection used in register.php
@@ -45,8 +40,7 @@ if ($input && $apiKey) {
     }
 
 
-  // 1. ADD THIS TO STOP THE HTML ERRORS FROM BREAKING JSON
-ob_clean(); 
+
 
 // 2. ADD THIS TO SAVE THE ORDER (Fixes Order History)
 $sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
