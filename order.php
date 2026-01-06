@@ -19,6 +19,17 @@ if ($input && $apiKey) {
     $cart = $input['cart'];
     $order_id = rand(1000, 9999); 
 
+
+    // 1. GET THE USER ID (Add this inside your user search block)
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+
+// 2. SAVE TO DATABASE (Add this before the email starts)
+$sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
+                VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
+$conn->query($sql_history);
+
+
+
     // --- FIND THE USER'S EMAIL (The "Register Logic" Fix) ---
     $customerEmail = null;
 
@@ -42,10 +53,7 @@ if ($input && $apiKey) {
 
 
 
-// 2. ADD THIS TO SAVE THE ORDER (Fixes Order History)
-$sql_history = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
-                VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
-$conn->query($sql_history);
+
 
 
     // --- SEND EMAIL TO THE CUSTOMER ---

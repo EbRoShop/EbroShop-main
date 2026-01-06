@@ -1272,7 +1272,19 @@ async function submitOrder() {
       body: JSON.stringify(orderData)
     });
 
-    const dbResult = await dbResponse.json();
+
+
+    // 1. Get the response as raw text first
+const rawText = await dbResponse.text(); 
+
+// 2. Clean the text (remove hidden <br> tags) and then turn into JSON
+const dbResult = JSON.parse(rawText.trim()); 
+
+// 3. Log it to your browser console so you can see hidden errors
+console.log("Server Debug:", rawText);
+
+
+
 
     if (!dbResult.success) {
       alert("❌ EMAIL ERROR: " + dbResult.message);
