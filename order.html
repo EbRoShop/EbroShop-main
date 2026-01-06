@@ -1267,21 +1267,17 @@ async function submitOrder() {
     const orderData = { name, phone, email, payment, total: subtotal, cart }; 
 
     const dbResponse = await fetch('order.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(orderData)
-});
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData)
+    });
 
-// Always read as text first to avoid the "Unexpected Token" error
-const rawResponse = await dbResponse.text();
-const result = JSON.parse(rawResponse.trim());
+    const dbResult = await dbResponse.json();
 
-if (result.success) {
-    alert("Order Saved! ID: " + result.order_id);
-    localStorage.removeItem('cart');
-    window.location.href = "account.html"; // Redirect to history
-}
-
+    if (!dbResult.success) {
+      alert("❌ EMAIL ERROR: " + dbResult.message);
+      // We continue to Telegram even if email fails so you don't lose the order
+    }
 
     // 2. Telegram Configuration
     const BOT_TOKEN = "8310816737:AAEIrdAPb4IXUwTl4fUeM-9k2qTE2jQmmuk";

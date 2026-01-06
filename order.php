@@ -19,21 +19,6 @@ if ($input && $apiKey) {
     $cart = $input['cart'];
     $order_id = rand(1000, 9999); 
 
-
-    // 1. Get the User ID from the database based on the name provided
-$user_query = "SELECT id FROM users WHERE first_name = '$name' LIMIT 1";
-$user_result = $conn->query($user_query);
-$user_id = ($user_result && $user_result->num_rows > 0) ? $user_result->fetch_assoc()['id'] : 0;
-
-// 2. THE SAVE COMMAND (This is what was missing)
-$sql_save = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
-             VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
-
-if (!$conn->query($sql_save)) {
-    // If it fails, we need to know why
-    error_log("Database Error: " . $conn->error);
-}
-
     // --- FIND THE USER'S EMAIL (The "Register Logic" Fix) ---
     $customerEmail = null;
 
