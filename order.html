@@ -1274,9 +1274,17 @@ async function submitOrder() {
 
 
 
+// 1. Get the server message as raw text
 const rawText = await dbResponse.text();
-const cleanText = rawText.substring(rawText.indexOf('{')); // This removes any <br> tags at the start
-const dbResult = JSON.parse(cleanText);
+
+// 2. THE FIX: Find where the JSON actually starts (the first '{')
+// This throws away all the <br> and <b> tags automatically
+const jsonStart = rawText.indexOf('{');
+const jsonEnd = rawText.lastIndexOf('}') + 1;
+const cleanJSON = rawText.substring(jsonStart, jsonEnd);
+
+// 3. Turn the cleaned text into a real object
+const dbResult = JSON.parse(cleanJSON);
 
 
 
