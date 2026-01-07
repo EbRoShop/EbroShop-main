@@ -19,23 +19,31 @@ if ($input && $apiKey) {
     $cart = $input['cart'];
     $order_id = rand(1000, 9999); 
 
+
+
+// --- DATABASE SAVE SYSTEM (Added for History) ---
+    
+    // 1. Try to find the User ID by the email sent from HTML
+    $user_id = 0;
+    $email = mysqli_real_escape_string($conn, $input['email']);
+    $user_res = $conn->query("SELECT id FROM users WHERE email = '$email' LIMIT 1");
+    
+    if ($user_res && $user_res->num_rows > 0) {
+        $user_row = $user_res->fetch_assoc();
+        $user_id = $user_row['id'];
+    }
+
+    // 2. Insert the order into your 'orders' table
+    $sql_save = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
+                 VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
+    
+    $conn->query($sql_save);
+    
+    // --- END OF DATABASE SAVE SYSTEM ---
+
+
     // --- FIND THE USER'S EMAIL (The "Register Logic" Fix) ---
     $customerEmail = null;
-
-    // --- SAVE TO DATABASE (The Missing Part) ---
-$cart_json = mysqli_real_escape_string($conn, json_encode($cart)); // Convert cart array to text for DB
-$sql = "INSERT INTO orders (order_id, customer_name, customer_email, phone, payment_method, total_amount, cart_items) 
-        VALUES ('$order_id', '$name', '$customerEmail', '$phone', '$payment', '$total', '$cart_json')";
-
-if ($conn->query($sql)) {
-    $db_saved = true;
-} else {
-    $db_saved = false;
-    $db_error = $conn->error;
-}
-
-// --- SEND EMAIL LOGIC FOLLOWS ---
-// (Keep your existing Brevo and Response code here)
 
     // 1. First, check if the email is in the current session
     if (isset($_SESSION['email'])) {
@@ -110,10 +118,6 @@ if ($conn->query($sql)) {
         curl_close($ch);
     }
 
-    echo json_encode([
-    'success' => $db_saved, 
-    'order_id' => $order_id,
-    'message' => $db_saved ? "Order saved" : "Database error: " . $db_error
-]);
+    echo json_encode(["success" => true, "order_id" => $order_id]);
 }
 ?>

@@ -1248,11 +1248,13 @@ function handleOrderClick() {
 
 
 async function submitOrder() {
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  // Get the email from the hidden input we just added
-  const email = document.getElementById("userEmail").value; 
-  const payment = document.querySelector("input[name='pay']:checked").value;
+/* --- Inside your existing submit event listener --- */
+const name = document.getElementById('customerName').value;
+const phone = document.getElementById('customerPhone').value;
+const address = document.getElementById('customerAddress').value;
+const payment = document.querySelector('input[name="payment"]:checked')?.value;
+// ADD THIS LINE:
+const email = document.getElementById('customerEmail')?.value || ""; 
   const proof = document.getElementById("proof");
 
   if (!name || !phone) { 
@@ -1264,7 +1266,16 @@ async function submitOrder() {
 
  try {
     // Include 'email' in the data sent to order.php
-    const orderData = { name, phone, email, payment, total: subtotal, cart }; 
+    const orderData = {
+    name, 
+    phone, 
+    address, 
+    payment,
+    email,
+    proof, // ADD THIS TO THE DATA OBJECT
+    total: totalAmount,
+    cart: cart
+};
 
     const dbResponse = await fetch('order.php', {
       method: 'POST',
