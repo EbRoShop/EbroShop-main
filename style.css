@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;700&display=swap');
+
+/* Header specific font from your About.html */
+.custom-lang-dropdown {
+    position: relative;
+    display: inline-block;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #222;
+    cursor: pointer;
+}
+
+.lang-trigger {
+    font-size: 18px; 
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+}
+
+.plus-icon {
+    font-size: 22px;
+    font-weight: 400;
+}
+
+/* Hidden Menu */
+.lang-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    list-style: none;
+    padding: 10px 0;
+    margin: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    min-width: 140px;
+    z-index: 2000;
+}
+
+.lang-options.show {
+    display: block;
+}
+
+.lang-options li {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+.lang-options li:hover {
+    background: #f5f5f5;
+}
+
+.lang-options img {
+    width: 20px;
+    height: auto;
+    border-radius: 2px;
+}
+
+/* Apply Amharic font globally when lang="am" */
+html[lang="am"] body {
+    font-family: 'Noto Sans Ethiopic', sans-serif !important;
+}
