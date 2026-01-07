@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
   <title>About EbRo-Shop</title>
 
   <style>
@@ -564,6 +565,9 @@ body {
   <div id="auth-text" style="font-size:14px; font-weight: 800;color: #0d4a7e;">Signup or Register</div>
 </a>
 
+
+
+
 <!-- Main Links -->
   <a href="home.html" class="menu-item">
     <!-- Home Icon -->
@@ -1025,6 +1029,27 @@ body {
     text-decoration: none;" href="#"><i class="fab fa-instagram"></i></a>
     </div>
 
+
+    <p data-key="true">Select Language</p>
+     <!--for select language-->
+    <div class="custom-lang-dropdown">
+    <div class="lang-trigger" onclick="toggleLangMenu()">
+        <span id="current-lang-label"  style="  margin: 0;
+    font-size: 24px;
+    font-weight: 700;">Select Language</span>
+        <span style="margin-left: 1113px; font-size: 28px;" class="plus-icon">+</span>
+    </div>
+    <ul class="lang-options" id="langOptions">
+        <li onclick="changeLanguage('en')">
+            <img src="https://flagcdn.com/w20/gb.png" alt="English"> English
+        </li>
+        <li onclick="changeLanguage('am')">
+            <img src="https://flagcdn.com/w20/et.png" alt="Amharic"> አማርኛ
+        </li>
+    </ul>
+</div>
+    
+
     <!-- Ebroshop Section (CLOSED by default) -->
     <div style="   border-top: 1px solid #ddd;
     padding: 18px 0;" class="section">
@@ -1034,7 +1059,7 @@ body {
     cursor: pointer;" class="section-header" onclick="toggleSection('adeeg', this)">
             <h3 style="  margin: 0;
     font-size: 24px;
-    font-weight: 700;">EbRoShop</h3>
+    font-weight: 700;">Ebroshop</h3>
             <span style="  font-size: 26px;" class="toggle">+</span>
         </div>
 
@@ -1558,5 +1583,8 @@ function toggleSection(id, header) {
     setInterval(updateBottomBadge, 2000);
 })();
   </script>
+
+
+<script src="languages.js"></script>
 </body>
 </html>
