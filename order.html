@@ -1304,7 +1304,7 @@ async function submitOrder() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: CHAT_ID,
-        text: `🔔 *NEW ORDER RECEIVED* 🔔\n\n🆔 *Order ID:* #${dbResult.order_id || 'N/A'}\n👤 *Customer:* ${name}\n📞 *Phone:* ${phone}\n📍 *Address:* ${userAddress}\n💳 *Payment:* ${payment}\n💰 *Total:* ETB ${subtotal.toFixed(2)}`,
+        text: `🔔 *NEW ORDER RECEIVED* 🔔\n\n🆔 *Order ID:* #${dbResult.order_id || 'N/A'}\n👤 *Customer:* ${name}\n📞 *Phone:* ${phone}\n💳 *Payment:* ${payment}\n💰 *Total:* ETB ${subtotal.toFixed(2)}`,
         parse_mode: "Markdown"
       })
     });
