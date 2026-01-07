@@ -1248,13 +1248,11 @@ function handleOrderClick() {
 
 
 async function submitOrder() {
-/* --- Inside your existing submit event listener --- */
-const name = document.getElementById('customerName').value;
-const phone = document.getElementById('customerPhone').value;
-const address = document.getElementById('customerAddress').value;
-const payment = document.querySelector('input[name="payment"]:checked')?.value;
-// ADD THIS LINE:
-const email = document.getElementById('customerEmail')?.value || ""; 
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  // Get the email from the hidden input we just added
+  const email = document.getElementById("userEmail").value; 
+  const payment = document.querySelector("input[name='pay']:checked").value;
   const proof = document.getElementById("proof");
 
   if (!name || !phone) { 
@@ -1266,22 +1264,24 @@ const email = document.getElementById('customerEmail')?.value || "";
 
  try {
     // Include 'email' in the data sent to order.php
-    const orderData = {
-    name, 
-    phone, 
-    address, 
-    payment,
-    email,
-    proof, // ADD THIS TO THE DATA OBJECT
+   /* Keep your Telegram code above this exactly as it is */
+
+const orderData = {
+    name: name,
+    phone: phone,
+    address: address,
+    payment: payment,
+    email: document.getElementById('customerEmail')?.value || "", // ADD THIS LINE
     total: totalAmount,
     cart: cart
 };
 
-    const dbResponse = await fetch('order.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData)
-    });
+// This sends the data to your PHP to save and send Email
+fetch('order.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orderData)
+});
 
     const dbResult = await dbResponse.json();
 

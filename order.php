@@ -19,27 +19,22 @@ if ($input && $apiKey) {
     $cart = $input['cart'];
     $order_id = rand(1000, 9999); 
 
-
-
-// --- DATABASE SAVE SYSTEM (Added for History) ---
-    
-    // 1. Try to find the User ID by the email sent from HTML
+// --- NEW: SAVE TO DATABASE SYSTEM ---
+    $user_email = mysqli_real_escape_string($conn, $input['email']);
     $user_id = 0;
-    $email = mysqli_real_escape_string($conn, $input['email']);
-    $user_res = $conn->query("SELECT id FROM users WHERE email = '$email' LIMIT 1");
-    
-    if ($user_res && $user_res->num_rows > 0) {
-        $user_row = $user_res->fetch_assoc();
-        $user_id = $user_row['id'];
+
+    // Find the ID of the user who is logged in
+    $user_res = $conn->query("SELECT id FROM users WHERE email = '$user_email' LIMIT 1");
+    if($user_res && $user_res->num_rows > 0) {
+        $user_id = $user_res->fetch_assoc()['id'];
     }
 
-    // 2. Insert the order into your 'orders' table
+    // Save the order to the orders table
     $sql_save = "INSERT INTO orders (user_id, order_id, total_amount, payment_method, status) 
                  VALUES ('$user_id', '$order_id', '$total', '$payment', 'Pending')";
     
     $conn->query($sql_save);
-    
-    // --- END OF DATABASE SAVE SYSTEM ---
+    // --- END OF SAVE SYSTEM ---
 
 
     // --- FIND THE USER'S EMAIL (The "Register Logic" Fix) ---
