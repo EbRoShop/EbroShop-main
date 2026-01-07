@@ -1268,11 +1268,17 @@ async function submitOrder() {
 
     // --- 1. SAVE TO DATABASE (Using save_order.php) ---
     try {
-        const dbResponse = await fetch('save_order.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData)
-        });
+       const dbResponse = await fetch('save_order.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        name: name,
+        phone: phone,
+        payment: payment,
+        total: subtotal, // Make sure this matches your subtotal variable
+        cart: cart
+    })
+});
         const resultText = await dbResponse.text();
         dbResult = JSON.parse(resultText.substring(resultText.indexOf('{')));
     } catch (dbErr) {
