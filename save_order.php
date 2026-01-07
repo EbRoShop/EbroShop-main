@@ -22,20 +22,6 @@ if (!$data) {
 }
 
 $user_id = $_SESSION['user_id'];
-
-// Fetch the full address from the users table
-$address_line = "No Address Found";
-$addr_query = $conn->query("SELECT address, city, state, country FROM users WHERE id = '$user_id' LIMIT 1");
-
-if ($addr_query && $row = $addr_query->fetch_assoc()) {
-    // This creates the single line: Street, City, State, Country
-    $address_line = implode(", ", array_filter([$row['address'], $row['city'], $row['state'], $row['country']]));
-}
-
-// Add the address to your JSON response so the HTML can see it
-echo json_encode(['success' => true, 'order_id' => $order_id, 'user_address' => $address_line]);
-exit();
-
 $name    = mysqli_real_escape_string($conn, $data['name']);
 $phone   = mysqli_real_escape_string($conn, $data['phone']);
 $payment = mysqli_real_escape_string($conn, $data['payment']);
